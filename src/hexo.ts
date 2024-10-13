@@ -1,8 +1,11 @@
 import { homedir } from "os";
-import { join, sep } from "path";
+import { join } from "path";
 import * as simpleGit from "simple-git";
 import * as fs from "fs";
 import { loadAccessToken, getOctokitInstance } from "./github";
+import minimist from "minimist";
+import axios from "axios";
+import * as unzipper from "unzipper";
 import Hexo from "hexo";
 
 const homeDirectory: string = homedir();
@@ -13,8 +16,10 @@ const git = simpleGit(localHexoDir);
 // Function to check if the repository exists
 const checkRepoExists = async (repoName: string, octokit: any) => {
   try {
-    const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({ type: "all" });
-    return repos.some(repo => repo.name === repoName && repo.private);
+    const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
+      type: "all",
+    });
+    return repos.some((repo) => repo.name === repoName && repo.private);
   } catch (error) {
     throw new Error(`Error checking repository existence: ${error.message}`);
   }
@@ -22,9 +27,46 @@ const checkRepoExists = async (repoName: string, octokit: any) => {
 
 // Function to add Hexo Starter as a submodule if it doesn't exist
 const addHexoStarterSubmodule = async () => {
-  const starterRepo = "https://github.com/hexojs/hexo-starter";
-  await git.submoduleAdd(starterRepo, 'hexo-starter');
-  console.log("Added hexo-starter as a submodule successfully.");
+  const starterRepoZipUrl =
+    "https://github.com/hexojs/hexo-starter/archive/refs/heads/master.zip";
+  const zipFilePath = join(localHexoDir, "hexo-starter.zip");
+
+  // Step 1: Download the ZIP file
+  const response = await axios({
+    method: "get",
+    url: starterRepoZipUrl,
+    responseType: "stream",
+  });
+
+  // Step 2: Save the ZIP file locally
+  const writer = fs.createWriteStream(zipFilePath);
+  response.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on("finish", async () => {
+      // Step 3: Extract the ZIP file
+      fs.createReadStream(zipFilePath)
+        .pipe(unzipper.Extract({ path: localHexoDir }))
+        .on("close", () => {
+          console.log("Extracted hexo-starter contents successfully.");
+          // Optionally, rename the extracted folder if necessary
+          fs.renameSync(
+            join(localHexoDir, "hexo-starter-master"),
+            join(localHexoDir, "hexo-starter")
+          );
+          // Clean up the ZIP file
+          fs.unlinkSync(zipFilePath);
+          resolve();
+        })
+        .on("error", (error) => {
+          reject(new Error(`Error extracting ZIP file: ${error.message}`));
+        });
+    });
+
+    writer.on("error", (error) => {
+      reject(new Error(`Error writing ZIP file: ${error.message}`));
+    });
+  });
 };
 
 // Function to initialize local repository
@@ -34,25 +76,28 @@ const initializeLocalRepo = async () => {
 
   // Create a README file or any file to commit
   const readmePath = join(localHexoDir, "README.md");
-  fs.writeFileSync(readmePath, "# Hexo GitHub Repository\n\nThis is the initial commit.");
-  
+  fs.writeFileSync(
+    readmePath,
+    "# Hexo GitHub Repository\n\nThis is the initial commit."
+  );
+
   // Stage the README file
   await git.add(readmePath);
-  
+
   // Create an initial commit
   await git.commit("Initial commit with README");
 
   // Check if 'main' branch exists, if not create it
   const branches = await git.branchLocal();
-  if (!branches.all.includes('main')) {
-    await git.checkoutLocalBranch('main'); // Create and switch to 'main' branch
+  if (!branches.all.includes("main")) {
+    await git.checkoutLocalBranch("main"); // Create and switch to 'main' branch
   } else {
-    await git.checkout('main'); // Switch to 'main' branch if it exists
+    await git.checkout("main"); // Switch to 'main' branch if it exists
   }
 
   // Now add the Hexo Starter submodule
   await addHexoStarterSubmodule();
-  console.log("Added HexoStarter submodule.");
+  console.log("Added HexoStarter contents.");
 };
 
 // Function to set remote URL with personal access token
@@ -81,6 +126,9 @@ export const pushToHexoRepo = async () => {
     await setGitRemoteWithToken(loadAccessToken() as any); // Set remote with token
   }
 
+  await git.add(".");
+  await git.commit("feat: update hexo database");
+
   await git.push("origin", "main");
   console.log("Pushed to hexo-github-db successfully.");
 };
@@ -101,34 +149,48 @@ export const pullHexoRepo = async () => {
         throw new Error(`Error pulling from repository: ${error.message}`);
       }
     } else {
-      throw new Error("Local repository does not exist. Please run pushToHexoRepo first.");
+      throw new Error(
+        "Local repository does not exist. Please run pushToHexoRepo first."
+      );
     }
   } else {
     if (!localRepoExists) {
-      throw new Error("Repository hexo-github-db does not exist on GitHub. Please run pushToHexoRepo to create it.");
+      throw new Error(
+        "Repository hexo-github-db does not exist on GitHub. Please run pushToHexoRepo to create it."
+      );
     } else {
-      throw new Error("Local repository exists but remote does not. Please run pushToHexoRepo to create it.");
+      throw new Error(
+        "Local repository exists but remote does not. Please run pushToHexoRepo to create it."
+      );
     }
   }
 };
 
-export const hexoExec = (cmd: string, args: object) => {
+export const hexoExec = (cmd: string) => {
   const hexo = new Hexo(localHexoStarterDir, {
     debug: true,
   });
 
-  hexo.plugin_dir = "D:\\MyProjects\\hexo-github\\node_modules\\";
+  const argv = cmd.split(/\s+/);
+  const args = minimist(argv, { string: ["_", "p", "path", "s", "slug"] });
 
-  hexo.init().then(() => {
+  return hexo.init().then(() => {
+
+    let cmd = 'help';
+
+    if (!args.h && !args.help) {
+      const c = args._.shift();
+      if (c && hexo.extend.console.get(c)) cmd = c;
+    }
+
     process.on("SIGINT", () => {
       hexo.unwatch();
       hexo.exit();
     });
-    hexo
+
+    return hexo
       .call(cmd, args)
       .then(() => hexo.exit())
-      .catch((err: any) =>
-        hexo.exit(err)
-      );
+      .catch((err: any) => hexo.exit(err));
   });
 };

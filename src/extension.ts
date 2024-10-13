@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { hexoExec, pullHexoRepo, pushToHexoRepo } from "./hexo"; // Import the functions for cloning and pushing
 import { startOAuthLogin } from "./github";
-import { debug } from "console";
 
 export function activate(context: vscode.ExtensionContext) {
   // Register command for logging into GitHub
@@ -52,19 +51,33 @@ export function activate(context: vscode.ExtensionContext) {
   // Add commands to the context
   context.subscriptions.push(loginCommand, cloneCommand, pushCommand);
 
+  const cmd = vscode.commands.registerCommand("hexo-github.cmd", async () => {
+    // 显示输入框
+    const userInput = await vscode.window.showInputBox({
+      placeHolder: "请输入命令，例如：new --path test/test",
+    });
+
+    // 检查用户是否输入了命令
+    if (userInput) {
+      const cmd = userInput.replace(/^\s*hexo\s*/i, "").trim();
+      const result = hexoExec(cmd);
+      vscode.window.showInformationMessage(result);
+    } else {
+      vscode.window.showWarningMessage("没有输入任何命令!");
+    }
+  });
+
   const server = vscode.commands.registerCommand("hexo-github.server", () => {
-    // The code you place here will be executed every time your command is executed
-    // Display a message box to the user
-    hexoExec("server", { _: [], debug: true });
+    const result = hexoExec("server");
+    vscode.window.showInformationMessage(result);
   });
 
   const newBlog = vscode.commands.registerCommand("hexo-github.new", () => {
-    // The code you place here will be executed every time your command is executed
-    // Display a message box to the user
-    hexoExec("new", { _: [], path: "test/test" });
+    const result = hexoExec("new --path test/test");
+    vscode.window.showInformationMessage(result);
   });
 
-  context.subscriptions.push(server, newBlog);
+  context.subscriptions.push(cmd, server, newBlog);
 }
 
 // This method is called when your extension is deactivated

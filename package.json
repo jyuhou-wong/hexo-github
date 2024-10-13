@@ -26,6 +26,10 @@
         "title": "Push to Hexo Repository"
       },
       {
+        "command": "hexo-github.cmd",
+        "title": "cmd"
+      },
+      {
         "command": "hexo-github.server",
         "title": "server"
       },
@@ -85,25 +89,14 @@
     "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4"
   },
-  "hexo": {
-    "version": "7.3.0"
-  },
   "dependencies": {
     "@octokit/rest": "^21.0.2",
     "axios": "^1.7.7",
     "express": "^4.21.1",
     "hexo": "^7.3.0",
-    "hexo-generator-archive": "^2.0.0",
-    "hexo-generator-category": "^2.0.0",
-    "hexo-generator-index": "^4.0.0",
-    "hexo-generator-tag": "^2.0.0",
-    "hexo-renderer-ejs": "^2.0.0",
-    "hexo-renderer-marked": "^6.3.0",
-    "hexo-renderer-stylus": "^3.0.1",
-    "hexo-server": "^3.0.0",
-    "hexo-theme-landscape": "^1.0.0",
-    "node-fetch": "^3.3.2",
+    "minimist": "^1.2.8",
     "open": "^10.1.0",
-    "simple-git": "^3.27.0"
+    "simple-git": "^3.27.0",
+    "unzipper": "^0.12.3"
   }
 }
