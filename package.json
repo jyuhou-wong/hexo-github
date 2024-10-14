@@ -9,9 +9,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -29,23 +27,27 @@
       },
       {
         "command": "hexo-github.cmd",
-        "title": "cmd"
+        "title": "Hexo cmd"
       },
       {
         "command": "hexo-github.server",
-        "title": "server"
+        "title": "Start server"
       },
       {
         "command": "hexo-github.new",
-        "title": "new"
+        "title": "New blog"
       },
       {
         "command": "hexo-github.localPreview",
-        "title": "local preview"
+        "title": "Local preview"
+      },
+      {
+        "command": "hexo-github.deploy",
+        "title": "Deploy blog"
       },
       {
         "command": "hexo-github.test",
-        "title": "test"
+        "title": "Test"
       }
     ],
     "menus": {
@@ -72,6 +74,10 @@
         },
         {
           "command": "hexo-github.localPreview",
+          "group": "navigation"
+        },
+        {
+          "command": "hexo-github.deploy",
           "group": "navigation"
         },
         {

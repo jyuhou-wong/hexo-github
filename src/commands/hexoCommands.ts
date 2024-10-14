@@ -1,56 +1,46 @@
 import * as vscode from "vscode";
-import {
-  getPreviewUrl,
-  hexoExec,
-  pushToGitHubPages,
-} from "../services/hexoService";
+import { getPreviewUrl, hexoExec } from "../services/hexoService";
 import open from "open";
+import { handleError } from "../utils";
+import { pushToGitHubPages } from "../services/githubService";
 
-// Execute Hexo command
-export const executeHexoCommand = async (context: vscode.ExtensionContext) => {
+const executeUserCommand = async (
+  placeholder: string,
+  action: (cmd: string) => Promise<void>
+) => {
   const userInput = await vscode.window.showInputBox({
-    placeHolder: "Please enter a command, e.g., new --path test/test",
+    placeHolder: placeholder,
   });
-
   if (userInput) {
     const cmd = userInput.replace(/^\s*hexo\s*/i, "").trim();
     try {
-      const result = await hexoExec(cmd);
-      vscode.window.showInformationMessage(result);
+      await action(cmd);
     } catch (error) {
-      vscode.window.showErrorMessage(
-        `Failed to execute Hexo command: ${error.message}`
-      );
+      handleError(error, "Failed to execute command");
     }
   } else {
     vscode.window.showWarningMessage("No command entered!");
   }
 };
 
+// Execute Hexo command
+export const executeHexoCommand = async () => {
+  await executeUserCommand(
+    "Please enter a command without hexo, e.g., new --path test/test",
+    hexoExec
+  );
+};
+
 // Create a new Hexo blog post
 export const createNewBlogPost = async () => {
   try {
-    const userInput = await vscode.window.showInputBox({
-      placeHolder: "Please enter a command, e.g., new --path test/test",
+    const path = await vscode.window.showInputBox({
+      placeHolder: "Please enter the path, e.g., about/My first blog",
     });
-
-    if (userInput) {
-      const cmd = userInput.replace(/^\s*hexo\s*/i, "").trim();
-      try {
-        await hexoExec(cmd);
-        vscode.window.showInformationMessage("Successfully created new blog");
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          `Failed to execute Hexo command: ${error.message}`
-        );
-      }
-    } else {
-      vscode.window.showWarningMessage("No command entered!");
-    }
+    await hexoExec(`new --path "${path}"`)
+    vscode.window.showInformationMessage("Successfully created Blog");
   } catch (error) {
-    vscode.window.showErrorMessage(
-      `Failed to create new blog: ${error.message}`
-    );
+    handleError(error, "Failed to start Hexo server");
   }
 };
 
@@ -60,9 +50,7 @@ export const startHexoServer = async () => {
     await hexoExec("server");
     vscode.window.showInformationMessage("Successfully started server");
   } catch (error) {
-    vscode.window.showErrorMessage(
-      `Failed to start Hexo server: ${error.message}`
-    );
+    handleError(error, "Failed to start Hexo server");
   }
 };
 
@@ -70,38 +58,38 @@ export const startHexoServer = async () => {
 export const deployBlog = async () => {
   try {
     await pushToGitHubPages();
-    vscode.window.showInformationMessage("Successfully Deployed blog to Github pages");
-  } catch (error) {
-    vscode.window.showErrorMessage(
-      `Failed to deploy blog to Github pages: ${error.message}`
+    vscode.window.showInformationMessage(
+      "Successfully deployed blog to GitHub pages"
     );
+  } catch (error) {
+    handleError(error, "Failed to deploy blog to GitHub pages");
   }
 };
 
-// Open Blog Local Preveiw
+// Open Blog Local Preview
 export const openBlogLocalPreview = async () => {
   const editor = vscode.window.activeTextEditor;
   if (editor) {
     const document = editor.document;
-    const filePath = document.uri.fsPath; // 获取文件路径
+    const filePath = document.uri.fsPath;
 
     try {
       const url = await getPreviewUrl(filePath);
       open(url);
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to preview: ${error.message}`);
+      handleError(error, "Failed to preview");
     }
   } else {
     vscode.window.showInformationMessage("No active editor found.");
   }
 };
 
-// testSomething
+// Test something
 export const testSomething = async () => {
   try {
-    let test = await deployBlog();
-    vscode.window.showInformationMessage(test);
+    await deployBlog();
+    vscode.window.showInformationMessage("Test completed successfully");
   } catch (error) {
-    vscode.window.showErrorMessage(`Failed to test: ${error.message}`);
+    handleError(error, "Failed to test");
   }
 };

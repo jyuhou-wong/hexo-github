@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { startOAuthLogin } from "../services/githubService";
-import { pullHexoRepo, pushHexoRepo } from "../services/hexoService";
+import { pullHexoRepo, pushHexoRepo, startOAuthLogin } from "../services/githubService";
+import { handleError } from "../utils";
 
 // Log in to GitHub
 export const loginToGitHub = async () => {
@@ -8,7 +8,7 @@ export const loginToGitHub = async () => {
     await startOAuthLogin();
     vscode.window.showInformationMessage("Successfully logged in to GitHub!");
   } catch (error) {
-    vscode.window.showErrorMessage(`Login failed: ${error.message}`);
+    handleError(error, "Login failed");
   }
 };
 
@@ -16,11 +16,9 @@ export const loginToGitHub = async () => {
 export const pullHexoRepository = async () => {
   try {
     await pullHexoRepo();
-    vscode.window.showInformationMessage(
-      "Successfully pulled hexo-github-db repository!"
-    );
+    vscode.window.showInformationMessage("Successfully pulled hexo-github-db repository!");
   } catch (error) {
-    vscode.window.showErrorMessage(`Pull failed: ${error.message}`);
+    handleError(error, "Pull failed");
   }
 };
 
@@ -28,10 +26,8 @@ export const pullHexoRepository = async () => {
 export const pushHexoRepository = async () => {
   try {
     await pushHexoRepo();
-    vscode.window.showInformationMessage(
-      "Successfully pushed to hexo-github-db repository!"
-    );
+    vscode.window.showInformationMessage("Successfully pushed to hexo-github-db repository!");
   } catch (error) {
-    vscode.window.showErrorMessage(`Push failed: ${error.message}`);
+    handleError(error, "Push failed");
   }
 };
