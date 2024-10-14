@@ -236,14 +236,18 @@ export const pushToGitHubPages = async () => {
 
   if (!localRepoExists) {
     await git.init(); // 初始化 Git 仓库
-    await git.checkoutLocalBranch("main"); // 创建并切换到 'main' 分支
+
+    const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${
+      user.login
+    }/${user.login}.github.io.git`;
+    await git.addRemote("origin", remoteUrl);
+  } 
+
+  const branches = await git.branchLocal();
+  if (!branches.all.includes("main")) {
+    await git.checkoutLocalBranch("main"); // 如果 'main' 不存在则创建
   } else {
-    const branches = await git.branchLocal();
-    if (!branches.all.includes("main")) {
-      await git.checkoutLocalBranch("main"); // 如果 'main' 不存在则创建
-    } else {
-      await git.checkout("main"); // 切换到 'main' 分支
-    }
+    await git.checkout("main"); // 切换到 'main' 分支
   }
 
   // 如果仓库不存在，则创建一个新的 GitHub 仓库
@@ -252,11 +256,6 @@ export const pushToGitHubPages = async () => {
       name: `${user.login}.github.io`,
     });
     console.log(`Created repository: ${response.data.full_name}`);
-
-    const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${
-      user.login
-    }/${user.login}.github.io.git`;
-    await git.addRemote("origin", remoteUrl);
   }
 
   // 添加并提交更改
