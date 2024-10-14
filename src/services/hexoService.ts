@@ -7,7 +7,6 @@ import minimist from "minimist";
 import axios from "axios";
 import * as unzipper from "unzipper";
 import Hexo from "hexo";
-import { window } from "vscode"; // Import VS Code window for notifications
 import { exec } from "child_process"; // Import exec for running npm commands
 import { arePathsEqual, checkNodeModulesExist } from "../utils";
 import { promisify } from "util";
@@ -16,6 +15,22 @@ const homeDirectory: string = homedir();
 const localHexoDir = join(homeDirectory, ".hexo-github");
 const localHexoStarterDir = join(localHexoDir, "hexo-starter");
 const git = simpleGit(localHexoDir);
+
+const initializeHexo = async (dir: string) => {
+  const hexo = new Hexo(dir, { debug: true });
+  await hexo.init();
+  return hexo;
+};
+
+const getCommand = (hexo: Hexo, args: any) => {
+  if (!args.h && !args.help) {
+    const command = args._.shift();
+    if (command && hexo.extend.console.get(command)) {
+      return command;
+    }
+  }
+  return "help";
+};
 
 // Promisify exec for easier async/await usage
 const execAsync = promisify(exec);
@@ -36,7 +51,7 @@ const checkRepoExists = async (repoName: string, octokit: any) => {
     const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
       type: "all",
     });
-    return repos.some((repo) => repo.name === repoName && repo.private);
+    return repos.some((repo) => repo.name === repoName);
   } catch (error) {
     throw new Error(`Error checking repository existence: ${error.message}`);
   }
@@ -120,12 +135,6 @@ const initializeLocalRepo = async () => {
   console.log("Added HexoStarter contents.");
 };
 
-// Function to set remote URL with personal access token
-const setGitRemoteWithToken = (token: string) => {
-  const remoteUrl = `https://${token}:x-oauth-basic@github.com/jyuhou-wong/hexo-github-db.git`;
-  return git.addRemote("origin", remoteUrl);
-};
-
 // Function to push changes to the hexo-github-db repository
 export const pushHexoRepo = async () => {
   const octokit = getOctokitInstance();
@@ -143,7 +152,10 @@ export const pushHexoRepo = async () => {
       private: true,
     });
     console.log(`Created repository: ${response.data.full_name}`);
-    await setGitRemoteWithToken(loadAccessToken() as any); // Set remote with token
+    const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${
+      user.login
+    }/hexo-github-db.git`;
+    await git.addRemote("origin", remoteUrl);
   }
 
   await git.add(".");
@@ -186,12 +198,8 @@ export const pullHexoRepo = async () => {
   }
 };
 
-export const getRouteById = async (_id: string) => {
-  const hexo = new Hexo(localHexoStarterDir, {
-    debug: true,
-  });
-
-  await hexo.init();
+export const getPreviewUrl = async (path: string) => {
+  const hexo = await initializeHexo(localHexoStarterDir);
   await hexo.load();
 
   const source_path = join(localHexoStarterDir, hexo.config.source_dir);
@@ -199,8 +207,8 @@ export const getRouteById = async (_id: string) => {
   const generators = await hexo._runGenerators();
 
   const matchingItem = generators.find(({ layout, data }) => {
-    if (!layout) return false;
-    return arePathsEqual(_id, join(source_path, data.source));
+    if (!layout || !data.source) return false;
+    return arePathsEqual(path, join(source_path, data.source));
   });
 
   hexo.exit();
@@ -208,6 +216,56 @@ export const getRouteById = async (_id: string) => {
   if (!matchingItem) throw new Error("该文件不是博客文档");
 
   return `http://localhost:${hexo.config.server.port}/${matchingItem.path}`;
+};
+
+export const pushToGitHubPages = async () => {
+  const octokit = getOctokitInstance();
+  const hexo = await initializeHexo(localHexoStarterDir);
+
+  const localPublicDir = join(localHexoStarterDir, hexo.config.public_dir);
+
+  const { data: user } = await octokit.rest.users.getAuthenticated();
+
+  const repoExists = await checkRepoExists(`${user.login}.github.io`, octokit);
+  const localRepoExists = fs.existsSync(join(localPublicDir, ".git"));
+
+  // 生成静态文件
+  await hexoExec("generate");
+
+  const git = simpleGit(localPublicDir);
+
+  if (!localRepoExists) {
+    await git.init(); // 初始化 Git 仓库
+    await git.checkoutLocalBranch("main"); // 创建并切换到 'main' 分支
+  } else {
+    const branches = await git.branchLocal();
+    if (!branches.all.includes("main")) {
+      await git.checkoutLocalBranch("main"); // 如果 'main' 不存在则创建
+    } else {
+      await git.checkout("main"); // 切换到 'main' 分支
+    }
+  }
+
+  // 如果仓库不存在，则创建一个新的 GitHub 仓库
+  if (!repoExists) {
+    const response = await octokit.rest.repos.createForAuthenticatedUser({
+      name: `${user.login}.github.io`,
+    });
+    console.log(`Created repository: ${response.data.full_name}`);
+
+    const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${
+      user.login
+    }/${user.login}.github.io.git`;
+    await git.addRemote("origin", remoteUrl);
+  }
+
+  // 添加并提交更改
+  await git.add(".");
+  await git.commit("Deploy to GitHub Pages");
+
+  // 推送到 'main' 分支
+  await git.push("origin", "main", { "--force": null }); // 使用 --force 以防出现问题
+  console.log("Pushed to main successfully.");
 };
 
 export const hexoExec = async (cmd: string) => {
@@ -218,31 +276,22 @@ export const hexoExec = async (cmd: string) => {
     await installNpmModules(localHexoStarterDir);
   }
 
-  const hexo = new Hexo(localHexoStarterDir, {
-    debug: true,
-  });
-
+  const hexo = await initializeHexo(localHexoStarterDir);
   const argv = cmd.split(/\s+/);
   const args = minimist(argv, { string: ["_", "p", "path", "s", "slug"] });
 
-  return hexo.init().then(() => {
-    let cmd = "help";
+  const command = getCommand(hexo, args);
 
-    if (!args.h && !args.help) {
-      const c = args._.shift();
-      if (c && hexo.extend.console.get(c)) cmd = c;
-    }
-
-    process.on("SIGINT", () => {
-      hexo.unwatch();
-      hexo.exit();
-    });
-
-    return hexo
-      .call(cmd, args)
-      .then(() => {
-        hexo.exit();
-      })
-      .catch((err: any) => hexo.exit(err));
+  process.on("SIGINT", () => {
+    hexo.unwatch();
+    hexo.exit();
   });
+
+  try {
+    await hexo.call(command, args);
+  } catch (err) {
+    hexo.exit(err);
+  } finally {
+    hexo.exit();
+  }
 };

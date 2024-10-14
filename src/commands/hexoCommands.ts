@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
-import { getRouteById, hexoExec } from "../services/hexoService";
+import {
+  getPreviewUrl,
+  hexoExec,
+  pushToGitHubPages,
+} from "../services/hexoService";
 import open from "open";
 
 // Execute Hexo command
@@ -62,46 +66,42 @@ export const startHexoServer = async () => {
   }
 };
 
+// Deploy Blog
+export const deployBlog = async () => {
+  try {
+    await pushToGitHubPages();
+    vscode.window.showInformationMessage("Successfully Deployed blog to Github pages");
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Failed to deploy blog to Github pages: ${error.message}`
+    );
+  }
+};
+
 // Open Blog Local Preveiw
 export const openBlogLocalPreview = async () => {
-
   const editor = vscode.window.activeTextEditor;
   if (editor) {
-      const document = editor.document;
-      const filePath = document.uri.fsPath; // 获取文件路径
+    const document = editor.document;
+    const filePath = document.uri.fsPath; // 获取文件路径
 
-      try {
-        const url = await getRouteById(filePath);
-        open(url)
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          `Failed to preview: ${error.message}`
-        );
-      }
+    try {
+      const url = await getPreviewUrl(filePath);
+      open(url);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to preview: ${error.message}`);
+    }
   } else {
-      vscode.window.showInformationMessage('No active editor found.');
+    vscode.window.showInformationMessage("No active editor found.");
   }
-}
+};
 
 // testSomething
 export const testSomething = async () => {
-
-  const editor = vscode.window.activeTextEditor;
-  if (editor) {
-      const document = editor.document;
-      const filePath = document.uri.fsPath; // 获取文件路径
-
-      try {
-        let test = await getRouteById(filePath);
-        vscode.window.showInformationMessage(test);
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          `Failed to test: ${error.message}`
-        );
-      }
-  } else {
-      vscode.window.showInformationMessage('No active editor found.');
+  try {
+    let test = await deployBlog();
+    vscode.window.showInformationMessage(test);
+  } catch (error) {
+    vscode.window.showErrorMessage(`Failed to test: ${error.message}`);
   }
-
-
 };
