@@ -11,10 +11,12 @@ import {
   testSomething,
   localPreview,
   stopHexoServer,
+  deployBlog,
 } from "./hexoCommands";
 
 // Register all commands
 const commands = [
+  { command: "hexo-github.deploy", callback: deployBlog },
   { command: "hexo-github.loginToGitHub", callback: loginToGitHub },
   { command: "hexo-github.pullHexoRepo", callback: pullHexoRepository },
   { command: "hexo-github.pushHexoRepo", callback: pushHexoRepository },

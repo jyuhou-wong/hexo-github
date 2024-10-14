@@ -69,3 +69,25 @@ export const installNpmModules = async (dirPath: string) => {
     throw new Error(`Error installing NPM modules: ${error.stderr}`);
   }
 };
+
+/**
+ * Checks if a path is valid
+ * @param path - The path to check
+ * @returns Returns true if the path is valid, otherwise false
+ */
+export const isValidPath = (path: string | undefined): boolean => {
+  // Regular expression to match invalid characters
+  const invalidChars: RegExp = /[<>:"'|?*]/;
+
+  // Check if the path is empty or contains invalid characters
+  if (!path || invalidChars.test(path)) {
+    return false;
+  }
+
+  // Further validity checks (can be extended as needed)
+  if (path.length > 255) {
+    return false; // Assuming the path length cannot exceed 255 characters
+  }
+
+  return true; // Path is valid
+};

@@ -28,6 +28,8 @@ const getCommand = (hexo: Hexo, args: any) => {
 
 // Execute Hexo command
 export const hexoExec = async (cmd: string) => {
+  if (!cmd) throw new Error("Command cannot be empty!");
+
   if (!(await checkNodeModulesExist(LOCAL_HEXO_STARTER_DIR))) {
     console.log(
       `Modules are not installed in ${LOCAL_HEXO_STARTER_DIR}. Installing now...`
@@ -36,7 +38,11 @@ export const hexoExec = async (cmd: string) => {
   }
 
   const hexo = await initializeHexo(LOCAL_HEXO_STARTER_DIR);
-  const argv = cmd.split(/\s+/);
+
+  const argv = cmd
+    .match(/(?:[^\s"]+|"[^"]*")+/g)!!
+    .map((arg) => arg.replace(/"/g, ""));
+
   const args = minimist(argv, { string: ["_", "p", "path", "s", "slug"] });
   const command = getCommand(hexo, args);
 

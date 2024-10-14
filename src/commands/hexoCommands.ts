@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { getPreviewUrl, hexoExec } from "../services/hexoService";
 import open from "open";
-import { handleError } from "../utils";
+import { handleError, isValidPath } from "../utils";
 import { pushToGitHubPages } from "../services/githubService";
 import type { Server } from "http";
 
@@ -39,12 +39,17 @@ export const executeHexoCommand = async () => {
 export const createNewBlogPost = async () => {
   try {
     const path = await vscode.window.showInputBox({
-      placeHolder: "Please enter the path, e.g., about/My first blog",
+      placeHolder: "e.g., about/My first blog",
     });
+
+    if (!path) return;
+
+    if (!isValidPath(path)) throw new Error("Path is invalid");
+
     await hexoExec(`new --path "${path}"`);
     vscode.window.showInformationMessage("Successfully created Blog");
   } catch (error) {
-    handleError(error, "Failed to start Hexo server");
+    handleError(error, "Failed to create new blog");
   }
 };
 
@@ -77,7 +82,7 @@ export const stopHexoServer = async () => {
     updateServerStatus(false);
     vscode.window.showInformationMessage("Successfully stoped server");
   } catch (error) {
-    handleError(error, "Failed to start Hexo server");
+    handleError(error, "Failed to stop Hexo server");
   }
 };
 
