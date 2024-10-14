@@ -9,7 +9,8 @@ import {
   createNewBlogPost,
   startHexoServer,
   testSomething,
-  openBlogLocalPreview,
+  localPreview,
+  stopHexoServer,
 } from "./hexoCommands";
 
 // Register all commands
@@ -19,8 +20,9 @@ const commands = [
   { command: "hexo-github.pushHexoRepo", callback: pushHexoRepository },
   { command: "hexo-github.cmd", callback: executeHexoCommand },
   { command: "hexo-github.new", callback: createNewBlogPost },
-  { command: "hexo-github.server", callback: startHexoServer },
-  { command: "hexo-github.localPreview", callback: openBlogLocalPreview },
+  { command: "hexo-github.startServer", callback: startHexoServer },
+  { command: "hexo-github.stopServer", callback: stopHexoServer },
+  { command: "hexo-github.localPreview", callback: localPreview },
   { command: "hexo-github.test", callback: testSomething },
 ];
 

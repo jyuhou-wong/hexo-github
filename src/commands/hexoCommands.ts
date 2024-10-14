@@ -3,6 +3,10 @@ import { getPreviewUrl, hexoExec } from "../services/hexoService";
 import open from "open";
 import { handleError } from "../utils";
 import { pushToGitHubPages } from "../services/githubService";
+import type { Server } from "http";
+
+let server: Server;
+let serverStatus: boolean = false;
 
 const executeUserCommand = async (
   placeholder: string,
@@ -37,18 +41,41 @@ export const createNewBlogPost = async () => {
     const path = await vscode.window.showInputBox({
       placeHolder: "Please enter the path, e.g., about/My first blog",
     });
-    await hexoExec(`new --path "${path}"`)
+    await hexoExec(`new --path "${path}"`);
     vscode.window.showInformationMessage("Successfully created Blog");
   } catch (error) {
     handleError(error, "Failed to start Hexo server");
   }
 };
 
+// Function to update the command title based on server status
+const updateServerStatus = (status: boolean): void => {
+  vscode.commands.executeCommand(
+    "setContext",
+    "hexo-github.serverStatus",
+    status
+  );
+  serverStatus = status;
+};
+
 // Start Hexo server
 export const startHexoServer = async () => {
   try {
-    await hexoExec("server");
+    vscode.window.showInformationMessage("Starting server...");
+    server = await hexoExec("server");
+    updateServerStatus(true);
     vscode.window.showInformationMessage("Successfully started server");
+  } catch (error) {
+    handleError(error, "Failed to start Hexo server");
+  }
+};
+
+// Stop Hexo server
+export const stopHexoServer = async () => {
+  try {
+    server.close();
+    updateServerStatus(false);
+    vscode.window.showInformationMessage("Successfully stoped server");
   } catch (error) {
     handleError(error, "Failed to start Hexo server");
   }
@@ -67,13 +94,17 @@ export const deployBlog = async () => {
 };
 
 // Open Blog Local Preview
-export const openBlogLocalPreview = async () => {
+export const localPreview = async () => {
   const editor = vscode.window.activeTextEditor;
   if (editor) {
     const document = editor.document;
     const filePath = document.uri.fsPath;
 
     try {
+      vscode.window.showInformationMessage("Opening...");
+
+      if (!serverStatus) await startHexoServer();
+
       const url = await getPreviewUrl(filePath);
       open(url);
     } catch (error) {

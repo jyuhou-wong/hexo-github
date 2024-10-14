@@ -30,8 +30,12 @@
         "title": "Hexo cmd"
       },
       {
-        "command": "hexo-github.server",
+        "command": "hexo-github.startServer",
         "title": "Start server"
+      },
+      {
+        "command": "hexo-github.stopServer",
+        "title": "Stop server"
       },
       {
         "command": "hexo-github.new",
@@ -54,35 +58,41 @@
       "editor/context": [
         {
           "command": "hexo-github.pullHexoRepo",
-          "group": "navigation"
+          "group": "hexo-github"
         },
         {
           "command": "hexo-github.pushHexoRepo",
-          "group": "navigation"
+          "group": "hexo-github"
         },
         {
           "command": "hexo-github.loginToGitHub",
-          "group": "navigation"
+          "group": "hexo-github"
         },
         {
-          "command": "hexo-github.server",
-          "group": "navigation"
+          "command": "hexo-github.startServer",
+          "group": "hexo-github",
+          "when": "hexo-github.serverStatus == false"
+        },
+        {
+          "command": "hexo-github.stopServer",
+          "group": "hexo-github",
+          "when": "hexo-github.serverStatus == true"
         },
         {
           "command": "hexo-github.new",
-          "group": "navigation"
+          "group": "hexo-github"
         },
         {
           "command": "hexo-github.localPreview",
-          "group": "navigation"
+          "group": "hexo-github"
         },
         {
           "command": "hexo-github.deploy",
-          "group": "navigation"
+          "group": "hexo-github"
         },
         {
           "command": "hexo-github.test",
-          "group": "navigation"
+          "group": "hexo-github"
         }
       ]
     }

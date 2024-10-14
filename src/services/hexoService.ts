@@ -45,13 +45,16 @@ export const hexoExec = async (cmd: string) => {
     hexo.exit();
   });
 
+  let result: any;
   try {
-    await hexo.call(command, args);
+    result = await hexo.call(command, args);
   } catch (err) {
     hexo.exit(err);
   } finally {
     hexo.exit();
   }
+
+  return result;
 };
 
 // Get preview URL for a given path
