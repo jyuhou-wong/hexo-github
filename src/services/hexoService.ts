@@ -2,16 +2,33 @@ import { homedir } from "os";
 import { join } from "path";
 import * as simpleGit from "simple-git";
 import * as fs from "fs";
-import { loadAccessToken, getOctokitInstance } from "./github";
+import { loadAccessToken, getOctokitInstance } from "../services/githubService";
 import minimist from "minimist";
 import axios from "axios";
 import * as unzipper from "unzipper";
 import Hexo from "hexo";
+import { window } from "vscode"; // Import VS Code window for notifications
+import { exec } from "child_process"; // Import exec for running npm commands
+import { arePathsEqual, checkNodeModulesExist } from "../utils";
+import { promisify } from "util";
 
 const homeDirectory: string = homedir();
 const localHexoDir = join(homeDirectory, ".hexo-github");
 const localHexoStarterDir = join(localHexoDir, "hexo-starter");
 const git = simpleGit(localHexoDir);
+
+// Promisify exec for easier async/await usage
+const execAsync = promisify(exec);
+
+// Function to install npm modules in the specified directory
+const installNpmModules = async (dirPath: string) => {
+  try {
+    await execAsync("npm install", { cwd: dirPath });
+    console.log("NPM modules installed successfully.");
+  } catch (error) {
+    throw new Error(`Error installing NPM modules: ${error.stderr}`);
+  }
+};
 
 // Function to check if the repository exists
 const checkRepoExists = async (repoName: string, octokit: any) => {
@@ -47,15 +64,18 @@ const addHexoStarterSubmodule = async () => {
       // Step 3: Extract the ZIP file
       fs.createReadStream(zipFilePath)
         .pipe(unzipper.Extract({ path: localHexoDir }))
-        .on("close", () => {
+        .on("close", async () => {
           console.log("Extracted hexo-starter contents successfully.");
-          // Optionally, rename the extracted folder if necessary
-          fs.renameSync(
-            join(localHexoDir, "hexo-starter-master"),
-            join(localHexoDir, "hexo-starter")
-          );
+          // Rename the extracted folder if necessary
+          const extractedDir = join(localHexoDir, "hexo-starter-master");
+          const targetDir = join(localHexoDir, "hexo-starter");
+          fs.renameSync(extractedDir, targetDir);
+
           // Clean up the ZIP file
           fs.unlinkSync(zipFilePath);
+
+          await installNpmModules(localHexoStarterDir);
+
           resolve();
         })
         .on("error", (error) => {
@@ -107,7 +127,7 @@ const setGitRemoteWithToken = (token: string) => {
 };
 
 // Function to push changes to the hexo-github-db repository
-export const pushToHexoRepo = async () => {
+export const pushHexoRepo = async () => {
   const octokit = getOctokitInstance();
   const repoExists = await checkRepoExists("hexo-github-db", octokit);
   const localRepoExists = fs.existsSync(join(localHexoDir, ".git"));
@@ -150,23 +170,54 @@ export const pullHexoRepo = async () => {
       }
     } else {
       throw new Error(
-        "Local repository does not exist. Please run pushToHexoRepo first."
+        "Local repository does not exist. Please run pushHexoRepo first."
       );
     }
   } else {
     if (!localRepoExists) {
       throw new Error(
-        "Repository hexo-github-db does not exist on GitHub. Please run pushToHexoRepo to create it."
+        "Repository hexo-github-db does not exist on GitHub. Please run pushHexoRepo to create it."
       );
     } else {
       throw new Error(
-        "Local repository exists but remote does not. Please run pushToHexoRepo to create it."
+        "Local repository exists but remote does not. Please run pushHexoRepo to create it."
       );
     }
   }
 };
 
-export const hexoExec = (cmd: string) => {
+export const getRouteById = async (_id: string) => {
+  const hexo = new Hexo(localHexoStarterDir, {
+    debug: true,
+  });
+
+  await hexo.init();
+  await hexo.load();
+
+  const source_path = join(localHexoStarterDir, hexo.config.source_dir);
+
+  const generators = await hexo._runGenerators();
+
+  const matchingItem = generators.find(({ layout, data }) => {
+    if (!layout) return false;
+    return arePathsEqual(_id, join(source_path, data.source));
+  });
+
+  hexo.exit();
+
+  if (!matchingItem) throw new Error("该文件不是博客文档");
+
+  return `http://localhost:${hexo.config.server.port}/${matchingItem.path}`;
+};
+
+export const hexoExec = async (cmd: string) => {
+  if (!(await checkNodeModulesExist(localHexoStarterDir))) {
+    console.log(
+      `Modules are not installed in ${localHexoStarterDir}. Installing now...`
+    );
+    await installNpmModules(localHexoStarterDir);
+  }
+
   const hexo = new Hexo(localHexoStarterDir, {
     debug: true,
   });
@@ -175,8 +226,7 @@ export const hexoExec = (cmd: string) => {
   const args = minimist(argv, { string: ["_", "p", "path", "s", "slug"] });
 
   return hexo.init().then(() => {
-
-    let cmd = 'help';
+    let cmd = "help";
 
     if (!args.h && !args.help) {
       const c = args._.shift();
@@ -190,7 +240,9 @@ export const hexoExec = (cmd: string) => {
 
     return hexo
       .call(cmd, args)
-      .then(() => hexo.exit())
+      .then(() => {
+        hexo.exit();
+      })
       .catch((err: any) => hexo.exit(err));
   });
 };

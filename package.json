@@ -9,7 +9,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -22,8 +24,8 @@
         "title": "Pull Hexo Repository"
       },
       {
-        "command": "hexo-github.pushToHexoRepo",
-        "title": "Push to Hexo Repository"
+        "command": "hexo-github.pushHexoRepo",
+        "title": "Push Hexo Repository"
       },
       {
         "command": "hexo-github.cmd",
@@ -36,6 +38,14 @@
       {
         "command": "hexo-github.new",
         "title": "new"
+      },
+      {
+        "command": "hexo-github.localPreview",
+        "title": "local preview"
+      },
+      {
+        "command": "hexo-github.test",
+        "title": "test"
       }
     ],
     "menus": {
@@ -45,7 +55,7 @@
           "group": "navigation"
         },
         {
-          "command": "hexo-github.pushToHexoRepo",
+          "command": "hexo-github.pushHexoRepo",
           "group": "navigation"
         },
         {
@@ -58,6 +68,14 @@
         },
         {
           "command": "hexo-github.new",
+          "group": "navigation"
+        },
+        {
+          "command": "hexo-github.localPreview",
+          "group": "navigation"
+        },
+        {
+          "command": "hexo-github.test",
           "group": "navigation"
         }
       ]

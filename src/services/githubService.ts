@@ -1,37 +1,35 @@
-import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
+import * as vscode from "vscode";
 import { homedir } from "os";
 import { Octokit } from "@octokit/rest";
 import express from "express";
 import open from "open";
 import { createServer } from "http";
-import axios from "axios"; // Import axios
+import axios from "axios";
 
-const clientId = "Ov23liWFfmPY4dF89N4o"; // GitHub application client ID
-const clientSecret = "14209332d10ea46c0d1900cad18fa12b6fb802a8"; // GitHub application client secret
+const clientId = "Ov23liWFfmPY4dF89N4o";
+const clientSecret = "14209332d10ea46c0d1900cad18fa12b6fb802a8";
 const redirectUri = "http://localhost:3000/auth/callback";
-const configDir = path.join(homedir(), ".hexo-github"); // Configuration directory
-const configFilePath = path.join(configDir, "config.json"); // Configuration file path
+const configDir = path.join(homedir(), ".hexo-github");
+const configFilePath = path.join(configDir, "config.json");
 
 // Ensure configuration directory exists
 if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
 
-// Load access token from configuration file
 export const loadAccessToken = () => {
-  let accessToken: string | null = null; // Store access token
+  let accessToken: string | null = null;
   if (fs.existsSync(configFilePath)) {
-    accessToken = JSON.parse(fs.readFileSync(configFilePath, "utf8")).accessToken || null;
+    accessToken =
+      JSON.parse(fs.readFileSync(configFilePath, "utf8")).accessToken || null;
   }
-  return accessToken
+  return accessToken;
 };
 
-// Save access token to configuration file
 const saveAccessToken = (accessToken: string) => {
   fs.writeFileSync(configFilePath, JSON.stringify({ accessToken }), "utf8");
 };
 
-// Start OAuth login process
 export const startOAuthLogin = async () => {
   const app = express();
   const server = createServer(app);
@@ -46,18 +44,19 @@ export const startOAuthLogin = async () => {
         { headers: { Accept: "application/json" } }
       );
 
-      saveAccessToken(data.access_token); // Save access token
-
+      saveAccessToken(data.access_token);
       const octokit = new Octokit({ auth: loadAccessToken() });
       const { data: user } = await octokit.rest.users.getAuthenticated();
       vscode.window.showInformationMessage(`Logged in as ${user.login}`);
 
       res.send("Login successful! You can close this window.");
     } catch (error: any) {
-      vscode.window.showErrorMessage(`Error during authentication: ${error.message}`);
+      vscode.window.showErrorMessage(
+        `Error during authentication: ${error.message}`
+      );
       res.send("Login failed! Please check the console for details.");
     } finally {
-      server.close(); // Close server
+      server.close();
     }
   });
 
