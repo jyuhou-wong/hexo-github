@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
 import { exec } from "child_process";
-
+import minimist from "minimist";
 
 /**
  * Checks if the node_modules directory exists in the given path.
@@ -54,13 +54,16 @@ export const arePathsEqual = (path1: string, path2: string): boolean => {
  * @param error - The error object containing the error details, which can be of type Error or unknown.
  * @param message - A custom message to display along with the error. Defaults to "An error occurred".
  */
-export const handleError = (error: unknown, message: string = "An error occurred") => {
+export const handleError = (
+  error: unknown,
+  message: string = "An error occurred"
+) => {
   let errorMessage: string;
 
   if (error instanceof Error) {
-      errorMessage = `${message}: ${error.message}`;
+    errorMessage = error.message;
   } else {
-      errorMessage = `${message}: An unknown error occurred`;
+    errorMessage = `${message}: An unknown error occurred`;
   }
 
   vscode.window.showErrorMessage(errorMessage);
@@ -101,7 +104,6 @@ export const isValidPath = (path: string | undefined): boolean => {
   return true; // Path is valid
 };
 
-
 /**
  * Formats the address to create a full URL.
  *
@@ -111,8 +113,26 @@ export const isValidPath = (path: string | undefined): boolean => {
  */
 export const formatAddress = (ip: string, port: number) => {
   // Use 'localhost' for '0.0.0.0' or '::'
-  const hostname = (ip === '0.0.0.0' || ip === '::') ? 'localhost' : ip;
+  const hostname = ip === "0.0.0.0" || ip === "::" ? "localhost" : ip;
 
   // Construct and return the full URL
   return new URL(`http://${hostname}:${port}`).toString();
+};
+
+/**
+ * Parses command line arguments from a command string.
+ *
+ * @param {string} cmd - The command string containing arguments.
+ * @returns {object} - An object containing the parsed arguments.
+ */
+export const getArgs = (cmd: string) => {
+  // Match arguments including quoted strings
+  const argv = cmd
+    .match(/(?:[^\s"]+|"[^"]*")+/g)!!
+    .map((arg) => arg.replace(/"/g, ""));
+
+  // Parse the arguments using minimist
+  const args = minimist(argv, { string: ["_", "p", "path", "s", "slug"] });
+
+  return args;
 };
