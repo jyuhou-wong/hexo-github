@@ -67,12 +67,11 @@ const updateServerStatus = (status: boolean): void => {
 export const startHexoServer = async () => {
   try {
     vscode.window.showInformationMessage("Starting server...");
-    server = await hexoExec("server");
+    server = await hexoExec("server --draft --debug");
     const { address, port } = server.address() as any;
     const url = formatAddress(address, port);
-    open(url);
     updateServerStatus(true);
-    vscode.window.showInformationMessage("Successfully started server");
+    vscode.window.showInformationMessage(`Successfully started server: ${url}`);
   } catch (error) {
     handleError(error, "Failed to start Hexo server");
   }

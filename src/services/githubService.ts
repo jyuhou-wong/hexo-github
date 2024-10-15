@@ -227,7 +227,7 @@ export const pullHexoRepo = async () => {
 // Push to GitHub Pages
 export const pushToGitHubPages = async () => {
   const octokit = await getOctokitInstance();
-  const hexo = await initializeHexo(LOCAL_HEXO_STARTER_DIR);
+  const hexo = await initializeHexo();
   const localPublicDir = path.join(
     LOCAL_HEXO_STARTER_DIR,
     hexo.config.public_dir

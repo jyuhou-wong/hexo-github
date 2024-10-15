@@ -1,16 +1,30 @@
+import * as vscode from "vscode";
 import Hexo from "hexo";
-import minimist from "minimist";
 import {
   arePathsEqual,
   checkNodeModulesExist,
+  getArgs,
+  handleError,
   installNpmModules,
 } from "../utils";
 import { LOCAL_HEXO_STARTER_DIR } from "./config";
 import { join } from "path";
 
+interface Args {
+  debug?: boolean;
+  safe?: boolean;
+  silent?: boolean;
+  draft?: boolean;
+  drafts?: boolean;
+  _?: string[];
+  output?: string;
+  config?: string;
+  [key: string]: any;
+}
+
 // Initialize Hexo
-export const initializeHexo = async (dir: string) => {
-  const hexo = new Hexo(dir, { debug: false });
+export const initializeHexo = async (args: Args = {}) => {
+  const hexo = new Hexo(LOCAL_HEXO_STARTER_DIR, args);
   await hexo.init();
   return hexo;
 };
@@ -31,19 +45,15 @@ export const hexoExec = async (cmd: string) => {
   if (!cmd) throw new Error("Command cannot be empty!");
 
   if (!(await checkNodeModulesExist(LOCAL_HEXO_STARTER_DIR))) {
-    console.log(
+    vscode.window.showInformationMessage(
       `Modules are not installed in ${LOCAL_HEXO_STARTER_DIR}. Installing now...`
     );
     await installNpmModules(LOCAL_HEXO_STARTER_DIR);
   }
 
-  const hexo = await initializeHexo(LOCAL_HEXO_STARTER_DIR);
+  const args = getArgs(cmd);
 
-  const argv = cmd
-    .match(/(?:[^\s"]+|"[^"]*")+/g)!!
-    .map((arg) => arg.replace(/"/g, ""));
-
-  const args = minimist(argv, { string: ["_", "p", "path", "s", "slug"] });
+  const hexo = await initializeHexo(args);
   const command = getCommand(hexo, args);
 
   process.on("SIGINT", () => {
@@ -56,6 +66,7 @@ export const hexoExec = async (cmd: string) => {
     result = await hexo.call(command, args);
   } catch (err) {
     hexo.exit(err);
+    handleError(err);
   } finally {
     hexo.exit();
   }
@@ -64,8 +75,12 @@ export const hexoExec = async (cmd: string) => {
 };
 
 // Get preview URL for a given path
-export const getPreviewUrl = async (path: string) => {
-  const hexo = await initializeHexo(LOCAL_HEXO_STARTER_DIR);
+export const getPreviewUrl = async (
+  path: string,
+  cmd: string = "--draft --debug"
+) => {
+  const args = getArgs(cmd);
+  const hexo = await initializeHexo(args);
   await hexo.load();
 
   const source_path = join(LOCAL_HEXO_STARTER_DIR, hexo.config.source_dir);
@@ -83,4 +98,10 @@ export const getPreviewUrl = async (path: string) => {
   return `http://localhost:${(hexo.config.server as any).port}/${
     matchingItem.path
   }`;
+};
+
+// Get Hexo config
+export const getHexoConfig = async () => {
+  const hexo = await initializeHexo();
+  return hexo.config;
 };
