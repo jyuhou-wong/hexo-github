@@ -94,9 +94,9 @@ const checkRepoExists = async (repoName: string, octokit: any) => {
     const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
       type: "all",
     });
-    return repos.some((repo) => repo.name === repoName);
+    return repos.some((repo: { name: string }) => repo.name === repoName);
   } catch (error) {
-    throw new Error(`Error checking repository existence: ${error.message}`);
+    throw error;
   }
 };
 
@@ -204,7 +204,7 @@ export const pullHexoRepo = async () => {
         await simpleGit(LOCAL_HEXO_DIR).pull("origin", "main");
         console.log("Pulled latest changes from hexo-github-db successfully.");
       } catch (error) {
-        throw new Error(`Error pulling from repository: ${error.message}`);
+        throw error;
       }
     } else {
       throw new Error(

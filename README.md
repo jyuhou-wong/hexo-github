@@ -1,71 +1,79 @@
-# hexo-github README
+# Hexo-GitHub VSCode Plugin
 
-This is the README for your extension "hexo-github". After writing up a brief description, we recommend including the following sections.
+Hexo-GitHub 是一个 VSCode 插件，旨在简化 Hexo 博客的管理与 GitHub 集成。用户可以通过该插件轻松地创建、更新和部署他们的 Hexo 博客。
 
-## Features
+## 功能
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **登录到 GitHub**: 使用 OAuth 流程安全地登录到 GitHub。
+- **创建私有库**: 在 GitHub 上创建新的私有库以存储 Hexo 博客。
+- **克隆私有库**: 从 GitHub 克隆现有的 Hexo 博客库。
+- **拉取和推送**: 从 GitHub 拉取最新的博客内容，或将本地更改推送到 GitHub。
+- **创建新博客**: 通过简单的命令创建新的 Hexo 博客文章。
+- **启动和停止 Hexo 服务器**: 在本地启动 Hexo 服务器以预览博客，或停止服务器。
+- **本地预览**: 在浏览器中打开本地博客的预览。
+- **部署到 GitHub Pages**: 将博客部署到 GitHub Pages，使其在线可访问。
 
-For example if there is an image subfolder under your extension project workspace:
+## 安装
 
-\!\[feature X\]\(images/feature-x.png\)
+1. 确保你的机器上安装了 [Node.js](https://nodejs.org/) 和 [npm](https://www.npmjs.com/)。
+2. 克隆本仓库：
+   ```bash
+   git clone https://github.com/jyuhou-wong/hexo-github.git
+   cd hexo-github
+   ```
+3. 安装依赖：
+   ```bash
+   npm install
+   ```
+4. 在 VSCode 中打开该项目，并按 `F5` 启动插件开发环境。
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## 使用指南
 
-## Requirements
+1. **登录到 GitHub**:
+   - 通过命令面板（`Ctrl+Shift+P`）输入 `Login to GitHub`，然后按照提示进行 OAuth 登录。
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+2. **创建新私有库**:
+   - 在命令面板中输入 `Create Private Repository`，输入库名并完成创建。
 
-## Extension Settings
+3. **克隆私有库**:
+   - 输入 `Clone Hexo Repository`，提供要克隆的库的 URL。
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+4. **拉取和推送**:
+   - 使用 `Pull Hexo Repository` 从 GitHub 拉取最新内容。
+   - 使用 `Push Hexo Repository` 将本地更改推送到 GitHub。
 
-For example:
+5. **创建新博客文章**:
+   - 输入 `New Blog`，提供文章路径。
 
-This extension contributes the following settings:
+6. **启动和停止 Hexo 服务器**:
+   - 使用 `Start Server` 启动 Hexo 服务器。
+   - 使用 `Stop Server` 停止服务器。
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+7. **本地预览**:
+   - 输入 `Local Preview`，在浏览器中查看博客的本地预览。
 
-## Known Issues
+8. **部署到 GitHub Pages**:
+   - 使用 `Deploy Blog` 将博客内容部署到 GitHub Pages。
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## 依赖
 
-## Release Notes
+该插件依赖以下 npm 包：
 
-Users appreciate release notes as you update your extension.
+- `express`: 用于创建本地服务器以处理 OAuth 回调。
+- `node-fetch`: 用于进行 HTTP 请求。
+- `simple-git`: 用于执行 Git 命令。
+- `@octokit/rest`: GitHub 的 REST API 客户端。
+- `open`: 用于在默认浏览器中打开 URL。
 
-### 1.0.0
+## 注意事项
 
-Initial release of ...
+- 确保在 GitHub 上创建 OAuth 应用，并获取 `Client ID` 和 `Client Secret`，并在代码中配置。
+- 请妥善保管访问令牌，避免泄露。
 
-### 1.0.1
+## 贡献
 
-Fixed issue #.
+欢迎任何形式的贡献！请提交问题或拉取请求。
 
-### 1.1.0
+## 许可证
 
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+此项目使用 MIT 许可证。请参阅 LICENSE 文件以获取更多信息。

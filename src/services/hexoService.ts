@@ -71,7 +71,7 @@ export const getPreviewUrl = async (path: string) => {
   const source_path = join(LOCAL_HEXO_STARTER_DIR, hexo.config.source_dir);
   const generators = await hexo._runGenerators();
 
-  const matchingItem = generators.find(({ layout, data }) => {
+  const matchingItem = generators.find(({ layout, data }: any) => {
     if (!layout || !data.source) return false;
     return arePathsEqual(path, join(source_path, data.source));
   });
@@ -80,5 +80,7 @@ export const getPreviewUrl = async (path: string) => {
 
   if (!matchingItem) throw new Error("This file is not a blog document");
 
-  return `http://localhost:${(hexo.config.server as any).port}/${matchingItem.path}`;
+  return `http://localhost:${(hexo.config.server as any).port}/${
+    matchingItem.path
+  }`;
 };

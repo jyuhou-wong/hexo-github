@@ -50,11 +50,19 @@ export const arePathsEqual = (path1: string, path2: string): boolean => {
 
 /**
  * Handles errors by displaying an error message in the VS Code window.
- * @param error - The error object containing the error details.
- * @param message - A custom message to display along with the error.
+ * @param error - The error object containing the error details, which can be of type Error or unknown.
+ * @param message - A custom message to display along with the error. Defaults to "An error occurred".
  */
-export const handleError = (error: Error, message: string) => {
-  vscode.window.showErrorMessage(`${message}: ${error.message}`);
+export const handleError = (error: unknown, message: string = "An error occurred") => {
+  let errorMessage: string;
+
+  if (error instanceof Error) {
+      errorMessage = `${message}: ${error.message}`;
+  } else {
+      errorMessage = `${message}: An unknown error occurred`;
+  }
+
+  vscode.window.showErrorMessage(errorMessage);
 };
 
 // Promisify exec for easier async/await usage
@@ -66,7 +74,7 @@ export const installNpmModules = async (dirPath: string) => {
     await execAsync("npm install", { cwd: dirPath });
     console.log("NPM modules installed successfully.");
   } catch (error) {
-    throw new Error(`Error installing NPM modules: ${error.stderr}`);
+    handleError(error, "Error installing NPM modules");
   }
 };
 
