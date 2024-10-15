@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'  # 触发条件：推送以 v 开头的标签，例如 v0.0.1
+      - 'v*'
 
 jobs:
   release:
@@ -16,29 +16,29 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16'  # 根据你的需求选择 Node.js 版本
+          node-version: '18'
 
       - name: Install dependencies
         run: npm install
 
       - name: Package the extension
-        run: npx vsce package  # 使用 npx 调用 vsce 打包插件
+        run: npx vsce package
 
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}  # 使用推送的标签作为 Release 标签
-          release_name: Release ${{ github.ref }}  # Release 名称
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub 提供的自动访问令牌
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload .vsix
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref }}
-          files: hexo-github-*.vsix  # 上传与版本匹配的 .vsix 文件
+          files: hexo-github-*.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

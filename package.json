@@ -10,7 +10,7 @@
   "homepage": "https://blog.hyh.ltd",
   "author": "Jyuhou Huang 黄宇豪 <jyuhou.wong@gmail.com>",
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.74.0"
   },
   "categories": [
     "Other"
