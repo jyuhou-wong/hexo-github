@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 触发条件：推送以 v 开头的标签，例如 v0.0.1
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'  # 根据你的需求选择 Node.js 版本
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Package the extension
+        run: npx vsce package  # 使用 npx 调用 vsce 打包插件
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref }}  # 使用推送的标签作为 Release 标签
+          release_name: Release ${{ github.ref }}  # Release 名称
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub 提供的自动访问令牌
+
+      - name: Upload .vsix
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          files: hexo-github-*.vsix  # 上传与版本匹配的 .vsix 文件
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
