@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { Octokit } from "@octokit/rest";
 import express from "express";
 import open from "open";
 import { createServer } from "http";
@@ -57,6 +56,8 @@ export const startOAuthLogin = async () => {
       );
 
       saveAccessToken(data.access_token);
+      const { Octokit } = await import("@octokit/rest");
+
       const octokit = new Octokit({ auth: loadAccessToken() });
       const { data: user } = await octokit.rest.users.getAuthenticated();
       vscode.window.showInformationMessage(`Logged in as ${user.login}`);
@@ -79,10 +80,11 @@ export const startOAuthLogin = async () => {
 };
 
 // Get Octokit instance
-export const getOctokitInstance = () => {
+export const getOctokitInstance = async () => {
   if (!loadAccessToken()) {
     throw new Error("Access token is not set. Please log in first.");
   }
+  const { Octokit } = await import("@octokit/rest");
   return new Octokit({ auth: loadAccessToken() });
 };
 
@@ -119,8 +121,8 @@ const downloadAndExtractStarter = async () => {
           const targetDir = path.join(LOCAL_HEXO_DIR, "hexo-starter");
           fs.renameSync(extractedDir, targetDir);
           fs.unlinkSync(ZIP_FILE_PATH);
-          await installNpmModules(LOCAL_HEXO_STARTER_DIR);
-          resolve();
+          const result = await installNpmModules(LOCAL_HEXO_STARTER_DIR);
+          resolve(result);
         })
         .on("error", (error) =>
           reject(new Error(`Error extracting ZIP file: ${error.message}`))
@@ -160,7 +162,7 @@ const initializeLocalRepo = async () => {
 
 // Push changes to the Hexo GitHub repository
 export const pushHexoRepo = async () => {
-  const octokit = getOctokitInstance();
+  const octokit = await getOctokitInstance();
   const repoExists = await checkRepoExists("hexo-github-db", octokit);
   const localRepoExists = fs.existsSync(path.join(LOCAL_HEXO_DIR, ".git"));
 
@@ -191,7 +193,7 @@ export const pushHexoRepo = async () => {
 
 // Pull Hexo repository
 export const pullHexoRepo = async () => {
-  const octokit = getOctokitInstance();
+  const octokit = await getOctokitInstance();
   const repoExists = await checkRepoExists("hexo-github-db", octokit);
   const localRepoPath = path.join(LOCAL_HEXO_DIR, ".git");
   const localRepoExists = fs.existsSync(localRepoPath);
@@ -224,7 +226,7 @@ export const pullHexoRepo = async () => {
 
 // Push to GitHub Pages
 export const pushToGitHubPages = async () => {
-  const octokit = getOctokitInstance();
+  const octokit = await getOctokitInstance();
   const hexo = await initializeHexo(LOCAL_HEXO_STARTER_DIR);
   const localPublicDir = path.join(
     LOCAL_HEXO_STARTER_DIR,

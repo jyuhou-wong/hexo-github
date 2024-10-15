@@ -80,5 +80,5 @@ export const getPreviewUrl = async (path: string) => {
 
   if (!matchingItem) throw new Error("This file is not a blog document");
 
-  return `http://localhost:${hexo.config.server.port}/${matchingItem.path}`;
+  return `http://localhost:${(hexo.config.server as any).port}/${matchingItem.path}`;
 };
