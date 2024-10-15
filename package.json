@@ -1,14 +1,16 @@
 {
   "name": "hexo-github",
   "displayName": "hexo-github",
-  "description": "",
+  "description": "A VSCode extension for managing Hexo blogs with GitHub integration.",
   "version": "0.0.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/jyuhou-wong/hexo-github.git"
   },
+  "homepage": "https://blog.hyh.ltd",
+  "author": "Jyuhou Huang 黄宇豪 <jyuhou.wong@gmail.com>",
   "engines": {
-    "vscode": "^1.94.0"
+    "vscode": "^1.60.0"
   },
   "categories": [
     "Other"
@@ -125,7 +127,8 @@
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.11.1",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "vsce": "^2.15.0"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.2",
