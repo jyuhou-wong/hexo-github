@@ -10,7 +10,7 @@ import { join } from "path";
 
 // Initialize Hexo
 export const initializeHexo = async (dir: string) => {
-  const hexo = new Hexo(dir, { debug: true });
+  const hexo = new Hexo(dir, { debug: false });
   await hexo.init();
   return hexo;
 };

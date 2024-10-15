@@ -4,6 +4,7 @@ import * as path from "path";
 import { promisify } from "util";
 import { exec } from "child_process";
 
+
 /**
  * Checks if the node_modules directory exists in the given path.
  * @param dirPath - The path to check.
@@ -98,4 +99,20 @@ export const isValidPath = (path: string | undefined): boolean => {
   }
 
   return true; // Path is valid
+};
+
+
+/**
+ * Formats the address to create a full URL.
+ *
+ * @param {string} ip - The IP address of the server.
+ * @param {number} port - The port number of the server.
+ * @returns {string} - The formatted URL as a string.
+ */
+export const formatAddress = (ip: string, port: number) => {
+  // Use 'localhost' for '0.0.0.0' or '::'
+  const hostname = (ip === '0.0.0.0' || ip === '::') ? 'localhost' : ip;
+
+  // Construct and return the full URL
+  return new URL(`http://${hostname}:${port}`).toString();
 };

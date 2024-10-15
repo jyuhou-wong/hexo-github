@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { getPreviewUrl, hexoExec } from "../services/hexoService";
 import open from "open";
-import { handleError, isValidPath } from "../utils";
+import { formatAddress, handleError, isValidPath } from "../utils";
 import { pushToGitHubPages } from "../services/githubService";
 import type { Server } from "http";
 
@@ -68,6 +68,9 @@ export const startHexoServer = async () => {
   try {
     vscode.window.showInformationMessage("Starting server...");
     server = await hexoExec("server");
+    const { address, port } = server.address() as any;
+    const url = formatAddress(address, port);
+    open(url);
     updateServerStatus(true);
     vscode.window.showInformationMessage("Successfully started server");
   } catch (error) {
@@ -123,7 +126,6 @@ export const localPreview = async () => {
 // Test something
 export const testSomething = async () => {
   try {
-    await deployBlog();
     vscode.window.showInformationMessage("Test completed successfully");
   } catch (error) {
     handleError(error, "Failed to test");
