@@ -24,21 +24,17 @@ jobs:
       - name: Package the extension
         run: npx vsce package
 
-      - name: Create or Update Release
+      - name: Set Release Name
+        id: set_release_name
+        run: echo "RELEASE_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref }}
+          name: Release ${{ env.RELEASE_NAME }}
           draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload .vsix
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref }}
           files: hexo-github-*.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
