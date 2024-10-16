@@ -14,3 +14,7 @@ export const LOCAL_HEXO_DIR = join(HOME_DIRECTORY, ".hexo-github");
 export const LOCAL_HEXO_STARTER_DIR = join(LOCAL_HEXO_DIR, "hexo-starter");
 export const ZIP_FILE_PATH = join(LOCAL_HEXO_DIR, "hexo-starter.zip");
 export const STARTER_REPO_ZIP_URL = "https://github.com/hexojs/hexo-starter/archive/refs/heads/master.zip";
+
+// Directories Name
+export const SOURCE_POSTS_DIRNAME = "_posts"
+export const SOURCE_DRAFTS_DIRNAME = "_drafts"
