@@ -136,3 +136,61 @@ export const getArgs = (cmd: string) => {
 
   return args;
 };
+
+/**
+ * Type for the exclusion patterns.
+ */
+export type ExcludePattern = string | RegExp;
+
+/**
+ * Recursively copies files from the source directory to the target directory.
+ *
+ * @param {string} src - The source directory path.
+ * @param {string} dest - The destination directory path.
+ * @param {ExcludePattern[]} exclude - An array of patterns to exclude (string or RegExp).
+ */
+export const copyFiles = (
+  src: string,
+  dest: string,
+  exclude: ExcludePattern[] = []
+) => {
+  // Ensure the source path exists
+  if (!fs.existsSync(src)) {
+    throw new Error(`Source directory "${src}" does not exist.`);
+  }
+
+  // Create the destination directory if it doesn't exist
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+
+  // Read the contents of the source directory
+  const items = fs.readdirSync(src);
+
+  items.forEach((item) => {
+    const srcItem = path.join(src, item);
+    const destItem = path.join(dest, item);
+
+    // Check if the item matches any of the exclude patterns
+    const isExcluded = exclude.some((pattern) => {
+      if (typeof pattern === "string") {
+        return item === pattern || item.startsWith(pattern.replace(/\*/g, "")); // Simple wildcard support
+      } else if (pattern instanceof RegExp) {
+        return pattern.test(item);
+      }
+      return false;
+    });
+
+    if (isExcluded) {
+      return; // Skip excluded items
+    }
+
+    // Check if the item is a directory
+    if (fs.statSync(srcItem).isDirectory()) {
+      copyFiles(srcItem, destItem);
+    } else {
+      // Copy the file
+      fs.copyFileSync(srcItem, destItem);
+    }
+  });
+};
