@@ -7,16 +7,19 @@ import {
   Uri,
   ExtensionContext,
 } from "vscode";
+import * as vscode from "vscode";
+
 import { readdir } from "fs/promises";
-import { join } from "path";
+import { basename, dirname, join } from "path";
 import {
   EXT_HEXO_STARTER_DIR,
   SOURCE_POSTS_DIRNAME,
   SOURCE_DRAFTS_DIRNAME,
 } from "../services/config";
 import { getHexoConfig } from "../services/hexoService";
-import { existsSync } from "fs";
-import { watch } from "chokidar";
+import { existsSync, statSync } from "fs";
+import { FSWatcher, watch } from "chokidar";
+import { arePathsEqual } from "../utils";
 
 const getLabel = (dirname: string = "Pages 页面") => {
   switch (dirname) {
@@ -29,35 +32,36 @@ const getLabel = (dirname: string = "Pages 页面") => {
   }
 };
 
-const createTreeItem = (
-  name: string,
-  uri: Uri,
-  isDirectory: boolean
-): TreeItem => {
-  const item = new TreeItem(
-    uri,
-    isDirectory
-      ? TreeItemCollapsibleState.Collapsed
-      : TreeItemCollapsibleState.None
-  );
-  item.label = name.replace(/\.md$/i, "");
-  if (!isDirectory) {
-    item.command = {
-      command: "vscode.open",
-      title: "Open File",
-      arguments: [uri],
-    };
-  }
-  return item;
-};
+export class BlogTreeItem extends vscode.TreeItem {
+  constructor(public readonly name: string, public readonly uri: vscode.Uri) {
+    super(uri);
 
-const getItems = async (path: string) => {
+    this.label = name.replace(/\.md$/i, ""); // 去掉文件扩展名
+
+    const isDirectory = statSync(uri.fsPath).isDirectory();
+
+    if (isDirectory) {
+      this.collapsibleState = TreeItemCollapsibleState.Collapsed;
+    }
+
+    // 如果不是目录，设置打开文件的命令
+    if (!isDirectory) {
+      this.command = {
+        command: "vscode.open",
+        title: "Open File",
+        arguments: [uri],
+      };
+    }
+  }
+}
+
+const getItems = async (path: string): Promise<TreeItem[]> => {
   try {
     const dirents = await readdir(path, { withFileTypes: true });
     return dirents.map((dirent) => {
       const fullPath = join(path, dirent.name);
       const uri = Uri.file(fullPath);
-      return createTreeItem(dirent.name, uri, dirent.isDirectory());
+      return new BlogTreeItem(dirent.name, uri);
     });
   } catch (err) {
     console.error(err);
@@ -65,7 +69,7 @@ const getItems = async (path: string) => {
   }
 };
 
-const getPages = async (dir: string) => {
+const getPages = async (dir: string): Promise<TreeItem[]> => {
   try {
     const dirents = await readdir(dir, { withFileTypes: true });
     return dirents
@@ -80,7 +84,7 @@ const getPages = async (dir: string) => {
       .map((dirent) => {
         const fullPath = join(dir, dirent.name, "index.md");
         const uri = Uri.file(fullPath);
-        return createTreeItem(dirent.name, uri, false);
+        return new BlogTreeItem(dirent.name, uri);
       });
   } catch (err) {
     console.error(err);
@@ -88,7 +92,7 @@ const getPages = async (dir: string) => {
   }
 };
 
-const getRootItems = async (rootDir: string) => {
+const getRootItems = async (rootDir: string): Promise<TreeItem[]> => {
   try {
     const dirents = await readdir(rootDir, { withFileTypes: true });
     const items = dirents
@@ -119,9 +123,29 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData: EventEmitter<void> = new EventEmitter<void>();
   readonly onDidChangeTreeData: Event<void> = this._onDidChangeTreeData.event;
   private sourceDir: string = "";
+  private watcher: FSWatcher = new FSWatcher();
 
   constructor(private context: ExtensionContext) {
     this.context = context;
+  }
+
+  getParent(element: TreeItem): vscode.ProviderResult<TreeItem> {
+    const parentPath = dirname(element.resourceUri!!.fsPath);
+
+    if (arePathsEqual(parentPath, this.sourceDir)) {
+      return undefined;
+    }
+
+    const parent = new BlogTreeItem(basename(parentPath), Uri.file(parentPath));
+
+    parent.collapsibleState = TreeItemCollapsibleState.Expanded;
+
+    // 如果是最顶层的
+    if (arePathsEqual(dirname(parentPath), this.sourceDir)) {
+      parent.label = getLabel(parent.name);
+    }
+
+    return parent;
   }
 
   getTreeItem(element: TreeItem): TreeItem {
@@ -132,66 +156,57 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
     if (!this.sourceDir) await this.setSourceDir();
 
     if (element?.resourceUri) {
-      return getItems(element.resourceUri.fsPath);
+      // 如果 element 是一个有效的资源 URI，获取该目录下的子项
+      return await getItems(element.resourceUri.fsPath);
     }
 
     if (element?.label === getLabel(SOURCE_POSTS_DIRNAME)) {
-      return getItems(join(this.sourceDir, SOURCE_POSTS_DIRNAME));
+      // 如果是文章目录，获取该目录下的子项
+      return await getItems(join(this.sourceDir, SOURCE_POSTS_DIRNAME));
     }
 
     if (element?.label === getLabel(SOURCE_DRAFTS_DIRNAME)) {
-      return getItems(join(this.sourceDir, SOURCE_DRAFTS_DIRNAME));
+      // 如果是草稿目录，获取该目录下的子项
+      return await getItems(join(this.sourceDir, SOURCE_DRAFTS_DIRNAME));
     }
 
     if (element?.label === getLabel()) {
-      return getPages(this.sourceDir);
+      // 如果是根节点，获取页面
+      return await getPages(this.sourceDir);
     }
 
-    return getRootItems(this.sourceDir);
+    // 默认返回根节点的子项
+    return await getRootItems(this.sourceDir);
   }
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
   }
 
+  dispose(): void {
+    this.watcher.close();
+  }
+
   watchSourceDir(dir: string): void {
-    const watcher = watch(dir, {
+    this.watcher = watch(dir, {
       persistent: true,
       ignoreInitial: true, // 忽略初始事件
     });
 
-    // 监听添加或重命名的事件
-    watcher.on("add", (path) => {
-      console.log(`File added: ${path}`);
+    // 通用的事件处理函数
+    const handleEvent = (eventType: string, path: string) => {
+      console.log(`${eventType} event: ${path}`);
       this.refresh(); // 调用 refresh 方法
-    });
+    };
 
-    watcher.on("addDir", (path) => {
-      console.log(`Directory added: ${path}`);
-      this.refresh(); // 调用 refresh 方法
-    });
-
-    // 监听删除事件
-    watcher.on("unlink", (path) => {
-      console.log(`File removed: ${path}`);
-      this.refresh(); // 调用 refresh 方法
-    });
-
-    watcher.on("unlinkDir", (path) => {
-      console.log(`Directory removed: ${path}`);
-      this.refresh(); // 调用 refresh 方法
-    });
-
-    // 监听重命名事件
-    watcher.on("change", (path) => {
-      console.log(`File renamed: ${path}`);
-      this.refresh(); // 调用 refresh 方法
-    });
-
-    // 记得在适当的时候关闭 watcher
-    this.context.subscriptions.push({
-      dispose: () => watcher.close(),
-    });
+    // 监听文件和目录的事件
+    this.watcher.on("add", (path) => handleEvent("File added", path));
+    this.watcher.on("addDir", (path) => handleEvent("Directory added", path));
+    this.watcher.on("unlink", (path) => handleEvent("File removed", path));
+    this.watcher.on("unlinkDir", (path) =>
+      handleEvent("Directory removed", path)
+    );
+    this.watcher.on("change", (path) => handleEvent("File renamed", path));
   }
 
   async setSourceDir() {

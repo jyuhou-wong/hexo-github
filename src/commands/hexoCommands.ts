@@ -1,9 +1,18 @@
+import { Uri, type TreeView } from "vscode";
 import * as vscode from "vscode";
-import { getPreviewUrl, hexoExec } from "../services/hexoService";
+import {
+  getHexoConfig,
+  getPreviewUrl,
+  hexoExec,
+} from "../services/hexoService";
 import open from "open";
 import { formatAddress, handleError, isValidPath } from "../utils";
 import { pushToGitHubPages } from "../services/githubService";
 import type { Server } from "http";
+import { EXT_HEXO_STARTER_DIR, SOURCE_POSTS_DIRNAME } from "../services/config";
+import { basename, join } from "path";
+import { existsSync } from "fs";
+import { BlogTreeItem } from "../providers/blogsTreeDataProvider";
 
 let server: Server;
 let serverStatus: boolean = false;
@@ -28,7 +37,7 @@ const executeUserCommand = async (
 };
 
 // Execute Hexo command
-export const executeHexoCommand = async () => {
+export const executeHexoCommand = async (context: vscode.ExtensionContext) => {
   await executeUserCommand(
     "Please enter a command without hexo, e.g., new --path test/test",
     hexoExec
@@ -36,7 +45,7 @@ export const executeHexoCommand = async () => {
 };
 
 // Create a new Hexo blog post
-export const createNewBlogPost = async () => {
+export const createNewBlogPost = async (context: vscode.ExtensionContext) => {
   try {
     const path = await vscode.window.showInputBox({
       placeHolder: "e.g., about/My first blog",
@@ -46,8 +55,38 @@ export const createNewBlogPost = async () => {
 
     if (!isValidPath(path)) throw new Error("Path is invalid");
 
+    const config = await getHexoConfig();
+    const postPath = join(
+      EXT_HEXO_STARTER_DIR,
+      config.source_dir,
+      SOURCE_POSTS_DIRNAME,
+      `${path}.md`
+    );
+
+    if (existsSync(postPath)) throw new Error("Blog is existed");
+
     await hexoExec(`new --path "${path}"`);
-    vscode.window.showInformationMessage("Successfully created Blog");
+
+    // 打开文件进行编辑
+    const document = await vscode.workspace.openTextDocument(postPath);
+    await vscode.window.showTextDocument(document);
+    vscode.window.showInformationMessage(
+      `Blog ${basename(path)} created and opened for editing.`
+    );
+
+    const blogsTreeView: TreeView<vscode.TreeItem> = context.subscriptions.find(
+      (subscription) =>
+        typeof subscription === "object" &&
+        (subscription as any).title === "Blogs"
+    ) as TreeView<vscode.TreeItem>;
+
+    if (blogsTreeView) {
+      console.log(blogsTreeView);
+      await blogsTreeView.reveal(
+        new BlogTreeItem(basename(path), Uri.file(postPath)),
+        { expand: true }
+      );
+    }
   } catch (error) {
     handleError(error, "Failed to create new blog");
   }
@@ -64,7 +103,7 @@ const updateServerStatus = (status: boolean): void => {
 };
 
 // Start Hexo server
-export const startHexoServer = async () => {
+export const startHexoServer = async (context: vscode.ExtensionContext) => {
   try {
     vscode.window.showInformationMessage("Starting server...");
     server = await hexoExec("server --draft --debug");
@@ -78,7 +117,7 @@ export const startHexoServer = async () => {
 };
 
 // Stop Hexo server
-export const stopHexoServer = async () => {
+export const stopHexoServer = async (context: vscode.ExtensionContext) => {
   try {
     server.close();
     updateServerStatus(false);
@@ -89,7 +128,7 @@ export const stopHexoServer = async () => {
 };
 
 // Deploy Blog
-export const deployBlog = async () => {
+export const deployBlog = async (context: vscode.ExtensionContext) => {
   try {
     await pushToGitHubPages();
     vscode.window.showInformationMessage(
@@ -101,7 +140,7 @@ export const deployBlog = async () => {
 };
 
 // Open Blog Local Preview
-export const localPreview = async () => {
+export const localPreview = async (context: vscode.ExtensionContext) => {
   const editor = vscode.window.activeTextEditor;
   if (editor) {
     const document = editor.document;
@@ -110,7 +149,7 @@ export const localPreview = async () => {
     try {
       vscode.window.showInformationMessage("Opening...");
 
-      if (!serverStatus) await startHexoServer();
+      if (!serverStatus) await startHexoServer(context);
 
       const url = await getPreviewUrl(filePath);
       open(url);

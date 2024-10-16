@@ -31,7 +31,7 @@ const commands = [
 export const registerCommands = (context: vscode.ExtensionContext) => {
   commands.forEach(({ command, callback }) => {
     context.subscriptions.push(
-      vscode.commands.registerCommand(command, callback)
+      vscode.commands.registerCommand(command, () => callback(context))
     );
   });
 };

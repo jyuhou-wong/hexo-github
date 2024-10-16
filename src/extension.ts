@@ -11,9 +11,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 创建 TreeDataProvider
   const blogsProvider = new BlogsTreeDataProvider(context);
-  vscode.window.createTreeView("hexo-github-blogs", {
+  
+  const blogsTreeView = vscode.window.createTreeView("hexo-github-blogs", {
     treeDataProvider: blogsProvider,
   });
+
+  context.subscriptions.push(blogsTreeView);
 }
 
 export function deactivate() {}
