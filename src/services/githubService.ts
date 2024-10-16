@@ -11,30 +11,32 @@ import {
   GITHUB_CLIENT_ID,
   GITHUB_CLIENT_SECRET,
   REDIRECT_URI,
-  CONFIG_DIR,
-  CONFIG_FILE_PATH,
-  LOCAL_HEXO_DIR,
-  LOCAL_HEXO_STARTER_DIR,
+  EXT_HEXO_STARTER_DIR,
   ZIP_FILE_PATH,
   STARTER_REPO_ZIP_URL,
+  EXT_HEXO_STARTER_DIRNAME,
+  EXT_CONFIG_PATH,
+  EXT_HOME_DIR,
+  EXT_CONFIG_NAME,
 } from "./config";
 import { hexoExec, initializeHexo } from "./hexoService";
-import { installNpmModules } from "../utils";
+import { copyFiles, installNpmModules } from "../utils";
+import type { ExcludePattern } from "../utils";
 
 // Ensure configuration directory exists
-if (!fs.existsSync(CONFIG_DIR)) fs.mkdirSync(CONFIG_DIR, { recursive: true });
+if (!fs.existsSync(EXT_CONFIG_PATH)) fs.mkdirSync(EXT_CONFIG_PATH, { recursive: true });
 
 export const loadAccessToken = () => {
   let accessToken: string | null = null;
-  if (fs.existsSync(CONFIG_FILE_PATH)) {
+  if (fs.existsSync(EXT_CONFIG_PATH)) {
     accessToken =
-      JSON.parse(fs.readFileSync(CONFIG_FILE_PATH, "utf8")).accessToken || null;
+      JSON.parse(fs.readFileSync(EXT_CONFIG_PATH, "utf8")).accessToken || null;
   }
   return accessToken;
 };
 
 const saveAccessToken = (accessToken: string) => {
-  fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify({ accessToken }), "utf8");
+  fs.writeFileSync(EXT_CONFIG_PATH, JSON.stringify({ accessToken }), "utf8");
 };
 
 export const startOAuthLogin = async () => {
@@ -114,14 +116,13 @@ const downloadAndExtractStarter = async () => {
   return new Promise((resolve, reject) => {
     writer.on("finish", async () => {
       fs.createReadStream(ZIP_FILE_PATH)
-        .pipe(unzipper.Extract({ path: LOCAL_HEXO_DIR }))
+        .pipe(unzipper.Extract({ path: EXT_HOME_DIR }))
         .on("close", async () => {
           console.log("Extracted hexo-starter contents successfully.");
-          const extractedDir = path.join(LOCAL_HEXO_DIR, "hexo-starter-master");
-          const targetDir = path.join(LOCAL_HEXO_DIR, "hexo-starter");
-          fs.renameSync(extractedDir, targetDir);
+          const extractedDir = path.join(EXT_HOME_DIR, "hexo-starter-master");
+          fs.renameSync(extractedDir, EXT_HEXO_STARTER_DIR);
           fs.unlinkSync(ZIP_FILE_PATH);
-          const result = await installNpmModules(LOCAL_HEXO_STARTER_DIR);
+          const result = await installNpmModules(EXT_HEXO_STARTER_DIR);
           resolve(result);
         })
         .on("error", (error) =>
@@ -137,14 +138,14 @@ const downloadAndExtractStarter = async () => {
 
 // Initialize local repository
 const initializeLocalRepo = async () => {
-  const git = simpleGit(LOCAL_HEXO_DIR);
+  const git = simpleGit(EXT_HOME_DIR);
   await git.init();
   console.log("Initialized local repository.");
 
-  const readmePath = path.join(LOCAL_HEXO_DIR, "README.md");
+  const readmePath = path.join(EXT_HOME_DIR, "README.md");
   fs.writeFileSync(
     readmePath,
-    "# Hexo GitHub Repository\n\nThis is the initial commit."
+    "# Hexo GitHub Pages Repository\n\nThis is my blog."
   );
   await git.add(readmePath);
   await git.commit("Initial commit with README");
@@ -164,7 +165,7 @@ const initializeLocalRepo = async () => {
 export const pushHexoRepo = async () => {
   const octokit = await getOctokitInstance();
   const repoExists = await checkRepoExists("hexo-github-db", octokit);
-  const localRepoExists = fs.existsSync(path.join(LOCAL_HEXO_DIR, ".git"));
+  const localRepoExists = fs.existsSync(path.join(EXT_HOME_DIR, ".git"));
 
   if (!repoExists && !localRepoExists) {
     await initializeLocalRepo();
@@ -181,10 +182,10 @@ export const pushHexoRepo = async () => {
     const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${
       user.login
     }/hexo-github-db.git`;
-    await simpleGit(LOCAL_HEXO_DIR).addRemote("origin", remoteUrl);
+    await simpleGit(EXT_HOME_DIR).addRemote("origin", remoteUrl);
   }
 
-  const git = simpleGit(LOCAL_HEXO_DIR);
+  const git = simpleGit(EXT_HOME_DIR);
   await git.add(".");
   await git.commit("feat: update hexo database");
   await git.push("origin", "main");
@@ -195,13 +196,13 @@ export const pushHexoRepo = async () => {
 export const pullHexoRepo = async () => {
   const octokit = await getOctokitInstance();
   const repoExists = await checkRepoExists("hexo-github-db", octokit);
-  const localRepoPath = path.join(LOCAL_HEXO_DIR, ".git");
+  const localRepoPath = path.join(EXT_HOME_DIR, ".git");
   const localRepoExists = fs.existsSync(localRepoPath);
 
   if (repoExists) {
     if (localRepoExists) {
       try {
-        await simpleGit(LOCAL_HEXO_DIR).pull("origin", "main");
+        await simpleGit(EXT_HOME_DIR).pull("origin", "main");
         console.log("Pulled latest changes from hexo-github-db successfully.");
       } catch (error) {
         throw error;
@@ -229,32 +230,46 @@ export const pushToGitHubPages = async () => {
   const octokit = await getOctokitInstance();
   const hexo = await initializeHexo();
   const localPublicDir = path.join(
-    LOCAL_HEXO_STARTER_DIR,
+    EXT_HEXO_STARTER_DIR,
     hexo.config.public_dir
   );
+
   const { data: user } = await octokit.rest.users.getAuthenticated();
 
   const repoExists = await checkRepoExists(`${user.login}.github.io`, octokit);
-  const localRepoExists = fs.existsSync(path.join(localPublicDir, ".git"));
 
-  await hexoExec("generate");
+  const localPublicDirExists = fs.existsSync(localPublicDir);
+  if (!localPublicDirExists) fs.mkdirSync(localPublicDir, { recursive: true });
 
   const git = simpleGit(localPublicDir);
 
+  const localRepoExists = fs.existsSync(path.join(localPublicDir, ".git"));
   if (!localRepoExists) {
     await git.init();
     const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${
       user.login
     }/${user.login}.github.io.git`;
     await git.addRemote("origin", remoteUrl);
+
+    const branches = await git.branchLocal();
+    if (!branches.all.includes("main")) {
+      await git.checkoutLocalBranch("main");
+    } else {
+      await git.checkout("main");
+    }
+
+    if (repoExists) await git.pull("origin", "main");
   }
 
-  const branches = await git.branchLocal();
-  if (!branches.all.includes("main")) {
-    await git.checkoutLocalBranch("main");
-  } else {
-    await git.checkout("main");
-  }
+  await hexoExec("generate");
+
+  const excludePatterns: ExcludePattern[] = [
+    ".git",
+    EXT_HEXO_STARTER_DIRNAME,
+    EXT_CONFIG_NAME,
+  ];
+
+  copyFiles(EXT_HOME_DIR, localPublicDir, excludePatterns);
 
   if (!repoExists) {
     const response = await octokit.rest.repos.createForAuthenticatedUser({

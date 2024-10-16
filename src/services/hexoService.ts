@@ -7,7 +7,7 @@ import {
   handleError,
   installNpmModules,
 } from "../utils";
-import { LOCAL_HEXO_STARTER_DIR } from "./config";
+import { EXT_HEXO_STARTER_DIR } from "./config";
 import { join } from "path";
 
 interface Args {
@@ -24,7 +24,7 @@ interface Args {
 
 // Initialize Hexo
 export const initializeHexo = async (args: Args = {}) => {
-  const hexo = new Hexo(LOCAL_HEXO_STARTER_DIR, args);
+  const hexo = new Hexo(EXT_HEXO_STARTER_DIR, args);
   await hexo.init();
   return hexo;
 };
@@ -44,11 +44,11 @@ const getCommand = (hexo: Hexo, args: any) => {
 export const hexoExec = async (cmd: string) => {
   if (!cmd) throw new Error("Command cannot be empty!");
 
-  if (!(await checkNodeModulesExist(LOCAL_HEXO_STARTER_DIR))) {
+  if (!(await checkNodeModulesExist(EXT_HEXO_STARTER_DIR))) {
     vscode.window.showInformationMessage(
-      `Modules are not installed in ${LOCAL_HEXO_STARTER_DIR}. Installing now...`
+      `Modules are not installed in ${EXT_HEXO_STARTER_DIR}. Installing now...`
     );
-    await installNpmModules(LOCAL_HEXO_STARTER_DIR);
+    await installNpmModules(EXT_HEXO_STARTER_DIR);
   }
 
   const args = getArgs(cmd);
@@ -83,7 +83,7 @@ export const getPreviewUrl = async (
   const hexo = await initializeHexo(args);
   await hexo.load();
 
-  const source_path = join(LOCAL_HEXO_STARTER_DIR, hexo.config.source_dir);
+  const source_path = join(EXT_HEXO_STARTER_DIR, hexo.config.source_dir);
   const generators = await hexo._runGenerators();
 
   const matchingItem = generators.find(({ layout, data }: any) => {
