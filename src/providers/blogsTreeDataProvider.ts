@@ -5,16 +5,18 @@ import {
   Event,
   TreeItemCollapsibleState,
   Uri,
+  ExtensionContext,
 } from "vscode";
 import { readdir } from "fs/promises";
 import { join } from "path";
 import {
-  LOCAL_HEXO_STARTER_DIR,
+  EXT_HEXO_STARTER_DIR,
   SOURCE_POSTS_DIRNAME,
   SOURCE_DRAFTS_DIRNAME,
 } from "../services/config";
 import { getHexoConfig } from "../services/hexoService";
 import { existsSync } from "fs";
+import { watch } from "chokidar";
 
 const getLabel = (dirname: string = "Pages 页面") => {
   switch (dirname) {
@@ -118,11 +120,8 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   readonly onDidChangeTreeData: Event<void> = this._onDidChangeTreeData.event;
   private sourceDir: string = "";
 
-  constructor(private context: any) {}
-
-  async setSourceDir() {
-    const config = await getHexoConfig();
-    this.sourceDir = join(LOCAL_HEXO_STARTER_DIR, config.source_dir);
+  constructor(private context: ExtensionContext) {
+    this.context = context;
   }
 
   getTreeItem(element: TreeItem): TreeItem {
@@ -153,5 +152,51 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
+  }
+
+  watchSourceDir(dir: string): void {
+    const watcher = watch(dir, {
+      persistent: true,
+      ignoreInitial: true, // 忽略初始事件
+    });
+
+    // 监听添加或重命名的事件
+    watcher.on("add", (path) => {
+      console.log(`File added: ${path}`);
+      this.refresh(); // 调用 refresh 方法
+    });
+
+    watcher.on("addDir", (path) => {
+      console.log(`Directory added: ${path}`);
+      this.refresh(); // 调用 refresh 方法
+    });
+
+    // 监听删除事件
+    watcher.on("unlink", (path) => {
+      console.log(`File removed: ${path}`);
+      this.refresh(); // 调用 refresh 方法
+    });
+
+    watcher.on("unlinkDir", (path) => {
+      console.log(`Directory removed: ${path}`);
+      this.refresh(); // 调用 refresh 方法
+    });
+
+    // 监听重命名事件
+    watcher.on("change", (path) => {
+      console.log(`File renamed: ${path}`);
+      this.refresh(); // 调用 refresh 方法
+    });
+
+    // 记得在适当的时候关闭 watcher
+    this.context.subscriptions.push({
+      dispose: () => watcher.close(),
+    });
+  }
+
+  async setSourceDir() {
+    const config = await getHexoConfig();
+    this.sourceDir = join(EXT_HEXO_STARTER_DIR, config.source_dir);
+    this.watchSourceDir(this.sourceDir);
   }
 }
