@@ -1,9 +1,11 @@
+import { Uri } from "vscode";
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
 import { exec } from "child_process";
 import minimist from "minimist";
+import { BlogsTreeDataProvider } from "./providers/blogsTreeDataProvider";
 
 /**
  * Checks if the node_modules directory exists in the given path.
@@ -37,16 +39,7 @@ export const checkNodeModulesExist = async (
  * @returns Whether they are equal.
  */
 export const arePathsEqual = (path1: string, path2: string): boolean => {
-  // Normalize paths and replace separators
-  const normalizedPath1 = path.normalize(
-    path1.replace(/\\/g, "/").replace(/^[a-zA-Z]:\/|^\//, "")
-  );
-  const normalizedPath2 = path.normalize(
-    path2.replace(/\\/g, "/").replace(/^[a-zA-Z]:\/|^\//, "")
-  );
-
-  // Compare the normalized paths
-  return normalizedPath1 === normalizedPath2; // Case sensitive
+  return Uri.file(path1).fsPath === Uri.file(path2).fsPath;
 };
 
 /**
@@ -193,4 +186,45 @@ export const copyFiles = (
       fs.copyFileSync(srcItem, destItem);
     }
   });
+};
+
+/**
+ * Reveals an item in the Blogs TreeView based on the provided URI.
+ *
+ * @param {vscode.Uri} uri - The URI of the item to reveal.
+ * @param {vscode.ExtensionContext} context - The extension context.
+ */
+export const revealItem = async (
+  uri: vscode.Uri,
+  context: vscode.ExtensionContext
+) => {
+  const prevUri = context.globalState.get<vscode.Uri>("prevUri");
+
+  if (uri.fsPath === prevUri?.fsPath) {
+    return;
+  }
+
+  context.globalState.update("prevUri", uri);
+
+  const blogsTreeView: vscode.TreeView<vscode.TreeItem> =
+    context.subscriptions.find(
+      (subscription) =>
+        typeof subscription === "object" &&
+        (subscription as any).title === "Blogs"
+    ) as vscode.TreeView<vscode.TreeItem>;
+
+  const blogsProvider: BlogsTreeDataProvider | undefined =
+    context.subscriptions.find(
+      (subscription) => subscription instanceof BlogsTreeDataProvider
+    );
+
+  if (blogsProvider && blogsTreeView) {
+    const item = await blogsProvider.findNodeByUri(uri);
+    if (item) {
+      blogsTreeView.reveal(item, {
+        expand: true,
+        focus: true,
+      });
+    }
+  }
 };

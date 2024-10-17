@@ -1,7 +1,8 @@
 // src/extension.ts
 import * as vscode from "vscode";
 import { registerCommands } from "./commands/index";
-import { BlogsTreeDataProvider } from "./providers/blogsTreeDataProvider"; // 引入 BlogsTreeDataProvider
+import { registerBlogsProvider } from "./providers";
+import { registerActiveEditorChangeListener } from './events';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "hexo-github" is now active!');
@@ -9,14 +10,11 @@ export function activate(context: vscode.ExtensionContext) {
   // 注册命令
   registerCommands(context);
 
-  // 创建 TreeDataProvider
-  const blogsProvider = new BlogsTreeDataProvider(context);
-  
-  const blogsTreeView = vscode.window.createTreeView("hexo-github-blogs", {
-    treeDataProvider: blogsProvider,
-  });
+  // 注册Blogs自定义视图
+  registerBlogsProvider(context);
 
-  context.subscriptions.push(blogsTreeView);
+  // 注册自定义事件
+  registerActiveEditorChangeListener(context)
 }
 
 export function deactivate() {}

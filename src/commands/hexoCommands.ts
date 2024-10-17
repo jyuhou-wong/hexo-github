@@ -1,4 +1,4 @@
-import { Uri, type TreeView } from "vscode";
+import { Uri } from "vscode";
 import * as vscode from "vscode";
 import {
   getHexoConfig,
@@ -6,13 +6,12 @@ import {
   hexoExec,
 } from "../services/hexoService";
 import open from "open";
-import { formatAddress, handleError, isValidPath } from "../utils";
+import { formatAddress, handleError, isValidPath, revealItem } from "../utils";
 import { pushToGitHubPages } from "../services/githubService";
 import type { Server } from "http";
 import { EXT_HEXO_STARTER_DIR, SOURCE_POSTS_DIRNAME } from "../services/config";
 import { basename, join } from "path";
 import { existsSync } from "fs";
-import { BlogTreeItem } from "../providers/blogsTreeDataProvider";
 
 let server: Server;
 let serverStatus: boolean = false;
@@ -74,19 +73,7 @@ export const createNewBlogPost = async (context: vscode.ExtensionContext) => {
       `Blog ${basename(path)} created and opened for editing.`
     );
 
-    const blogsTreeView: TreeView<vscode.TreeItem> = context.subscriptions.find(
-      (subscription) =>
-        typeof subscription === "object" &&
-        (subscription as any).title === "Blogs"
-    ) as TreeView<vscode.TreeItem>;
-
-    if (blogsTreeView) {
-      console.log(blogsTreeView);
-      await blogsTreeView.reveal(
-        new BlogTreeItem(basename(path), Uri.file(postPath)),
-        { expand: true }
-      );
-    }
+    await revealItem(Uri.file(postPath), context);
   } catch (error) {
     handleError(error, "Failed to create new blog");
   }
