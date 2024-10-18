@@ -2,7 +2,7 @@
 import * as vscode from "vscode";
 import { registerCommands } from "./commands/index";
 import { registerBlogsProvider } from "./providers";
-import { registerActiveEditorChangeListener } from './events';
+import { registerActiveEditorChangeListener } from "./events";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "hexo-github" is now active!');
@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
   registerBlogsProvider(context);
 
   // 注册自定义事件
-  registerActiveEditorChangeListener(context)
+  registerActiveEditorChangeListener(context);
 }
 
 export function deactivate() {}

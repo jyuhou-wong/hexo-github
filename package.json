@@ -84,8 +84,8 @@
       "view/item/context": [
         {
           "command": "hexo-github.localPreview",
-          "when": "view == hexo-github-blogs",
-          "group": "navigation"
+          "when": "view == hexo-github-blogs && viewItem == .md",
+          "group": "inline"
         }
       ],
       "editor/context": [
@@ -117,6 +117,7 @@
         },
         {
           "command": "hexo-github.localPreview",
+          "when": "resourceLangId == markdown",
           "group": "hexo-github"
         },
         {
