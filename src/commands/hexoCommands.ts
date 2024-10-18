@@ -36,7 +36,7 @@ const executeUserCommand = async (
 };
 
 // Execute Hexo command
-export const executeHexoCommand = async (context: vscode.ExtensionContext) => {
+export const executeHexoCommand = async (_context: vscode.ExtensionContext) => {
   await executeUserCommand(
     "Please enter a command without hexo, e.g., new --path test/test",
     hexoExec
@@ -90,7 +90,10 @@ const updateServerStatus = (status: boolean): void => {
 };
 
 // Start Hexo server
-export const startHexoServer = async (context: vscode.ExtensionContext) => {
+export const startHexoServer = async (
+  _args: any,
+  _context: vscode.ExtensionContext
+) => {
   try {
     vscode.window.showInformationMessage("Starting server...");
     server = await hexoExec("server --draft --debug");
@@ -104,7 +107,10 @@ export const startHexoServer = async (context: vscode.ExtensionContext) => {
 };
 
 // Stop Hexo server
-export const stopHexoServer = async (context: vscode.ExtensionContext) => {
+export const stopHexoServer = async (
+  _args: any,
+  _context: vscode.ExtensionContext
+) => {
   try {
     server.close();
     updateServerStatus(false);
@@ -115,7 +121,10 @@ export const stopHexoServer = async (context: vscode.ExtensionContext) => {
 };
 
 // Deploy Blog
-export const deployBlog = async (context: vscode.ExtensionContext) => {
+export const deployBlog = async (
+  _args: any,
+  _context: vscode.ExtensionContext
+) => {
   try {
     await pushToGitHubPages();
     vscode.window.showInformationMessage(
@@ -127,16 +136,20 @@ export const deployBlog = async (context: vscode.ExtensionContext) => {
 };
 
 // Open Blog Local Preview
-export const localPreview = async (context: vscode.ExtensionContext) => {
-  const editor = vscode.window.activeTextEditor;
-  if (editor) {
-    const document = editor.document;
-    const filePath = document.uri.fsPath;
+export const localPreview = async (
+  args: any,
+  context: vscode.ExtensionContext
+) => {
+  const filePath = args?.resourceUri?.fsPath ?? args?.fsPath;
 
+  // 同时打开文件在活动编辑器
+  vscode.commands.executeCommand("vscode.open", Uri.file(filePath));
+
+  if (filePath) {
     try {
       vscode.window.showInformationMessage("Opening...");
 
-      if (!serverStatus) await startHexoServer(context);
+      if (!serverStatus) await startHexoServer(args, context);
 
       const url = await getPreviewUrl(filePath);
       open(url);

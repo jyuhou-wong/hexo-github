@@ -69,6 +69,10 @@
       },
       {
         "command": "hexo-github.localPreview",
+        "icon": {
+          "dark": "resources/dark/hexo-github-preview.svg",
+          "light": "resources/light/hexo-github-preview.svg"
+        },
         "title": "Local preview"
       },
       {
