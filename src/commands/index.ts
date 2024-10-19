@@ -12,6 +12,7 @@ import {
   localPreview,
   stopHexoServer,
   deployBlog,
+  addItem,
 } from "./hexoCommands";
 import { deleteItem } from "../utils";
 
@@ -37,6 +38,12 @@ export const registerCommands = (context: vscode.ExtensionContext) => {
       )
     );
   });
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("hexo-github.addItem", (args) =>
+      addItem(args, context)
+    )
+  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("hexo-github.deleteItem", (args) =>

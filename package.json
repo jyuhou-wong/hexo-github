@@ -109,7 +109,7 @@
         },
         {
           "command": "hexo-github.addItem",
-          "when": "view == hexo-github-blogs && !(viewItem =~ /\\.[^\\\/]*$/i)",
+          "when": "view == hexo-github-blogs && !(viewItem =~ /\\.[^/\\\\]+$/i)",
           "group": "inline"
         },
         {

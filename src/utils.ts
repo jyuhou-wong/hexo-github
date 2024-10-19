@@ -1,7 +1,17 @@
 import { Uri } from "vscode";
 import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
+import {
+  access,
+  constants,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  stat,
+  statSync,
+} from "fs";
+import { basename, join } from "path";
 import { promisify } from "util";
 import { exec } from "child_process";
 import minimist from "minimist";
@@ -17,15 +27,15 @@ export const checkNodeModulesExist = async (
 ): Promise<boolean> => {
   return new Promise((resolve) => {
     // Ensure the provided path is a directory
-    fs.stat(dirPath, (err, stats) => {
+    stat(dirPath, (err, stats) => {
       if (err || !stats.isDirectory()) {
         resolve(false);
         return;
       }
 
       // Check for the existence of the node_modules directory
-      const nodeModulesPath = path.join(dirPath, "node_modules");
-      fs.access(nodeModulesPath, fs.constants.F_OK, (err) => {
+      const nodeModulesPath = join(dirPath, "node_modules");
+      access(nodeModulesPath, constants.F_OK, (err) => {
         resolve(!err); // If no error, node_modules exists
       });
     });
@@ -98,6 +108,28 @@ export const isValidPath = (path: string | undefined): boolean => {
 };
 
 /**
+ * Checks if a file name is valid.
+ * @param fileName - The file name to check.
+ * @returns Returns true if the file name is valid, otherwise false.
+ */
+export const isValidFileName = (fileName: string | undefined): boolean => {
+  // Regular expression to match invalid characters
+  const invalidChars: RegExp = /[<>:"'|?*\\/]/;
+
+  // Check if the file name is empty or contains invalid characters
+  if (!fileName || invalidChars.test(fileName)) {
+    return false;
+  }
+
+  // Further validity checks (can be extended as needed)
+  if (fileName.length === 0 || fileName.length > 255) {
+    return false; // Assuming the file name cannot be empty or exceed 255 characters
+  }
+
+  return true; // File name is valid
+};
+
+/**
  * Formats the address to create a full URL.
  *
  * @param {string} ip - The IP address of the server.
@@ -148,21 +180,21 @@ export const copyFiles = (
   exclude: ExcludePattern[] = []
 ) => {
   // Ensure the source path exists
-  if (!fs.existsSync(src)) {
+  if (!existsSync(src)) {
     throw new Error(`Source directory "${src}" does not exist.`);
   }
 
   // Create the destination directory if it doesn't exist
-  if (!fs.existsSync(dest)) {
-    fs.mkdirSync(dest, { recursive: true });
+  if (!existsSync(dest)) {
+    mkdirSync(dest, { recursive: true });
   }
 
   // Read the contents of the source directory
-  const items = fs.readdirSync(src);
+  const items = readdirSync(src);
 
   items.forEach((item) => {
-    const srcItem = path.join(src, item);
-    const destItem = path.join(dest, item);
+    const srcItem = join(src, item);
+    const destItem = join(dest, item);
 
     // Check if the item matches any of the exclude patterns
     const isExcluded = exclude.some((pattern) => {
@@ -179,11 +211,11 @@ export const copyFiles = (
     }
 
     // Check if the item is a directory
-    if (fs.statSync(srcItem).isDirectory()) {
+    if (statSync(srcItem).isDirectory()) {
       copyFiles(srcItem, destItem);
     } else {
       // Copy the file
-      fs.copyFileSync(srcItem, destItem);
+      copyFileSync(srcItem, destItem);
     }
   });
 };
@@ -235,21 +267,23 @@ export const revealItem = async (
  * @param {vscode.Uri} uri - The URI of the item to delete.
  */
 export const deleteItem = async (uri: vscode.Uri) => {
-  const isPage: boolean = /[\\/]+index\.md$/i.test(uri.fsPath);
-
-  const isBlog: boolean = /[^\\/]+\.md$/i.test(uri.fsPath);
+  let path = uri.fsPath;
+  const isPage: boolean = /[\\/]+index\.md$/i.test(path);
+  const isBlog: boolean = /[^\\/]+\.md$/i.test(path);
 
   let prompt: string = "";
 
   if (isPage) {
-    const name = path.basename(uri.fsPath.replace(/[\\/]+index.md$/i, ""));
+    /^(?!.*\.[^\/]*$).*$/i
+    path = path.replace(/[\\/]+index.md$/i, "");
+    const name = basename(path);
     prompt = `Are you sure you want to delete page "${name}"`;
   } else if (isBlog) {
-    const name = path.basename(uri.fsPath.replace(/\.md$/i, ""));
+    const name = basename(path.replace(/\.md$/i, ""));
     prompt = `Are you sure you want to delete blog "${name}"`;
   } else {
-    const name = path.basename(uri.fsPath);
-    const isDirectory = fs.statSync(uri.fsPath).isDirectory();
+    const name = basename(path);
+    const isDirectory = statSync(path).isDirectory();
     prompt = isDirectory
       ? `Are you sure you want to delete the directory "${name}" and all its files?`
       : `Are you sure you want to delete "${name}"`;
@@ -265,10 +299,8 @@ export const deleteItem = async (uri: vscode.Uri) => {
   if (confirmation === "Delete") {
     try {
       // Delete the item (file or directory)
-      fs.rmSync(uri.fsPath, { recursive: true, force: true });
-      vscode.window.showInformationMessage(
-        `Deleted "${uri.fsPath}" successfully.`
-      );
+      rmSync(path, { recursive: true, force: true });
+      vscode.window.showInformationMessage(`Deleted "${path}" successfully.`);
     } catch (error) {
       handleError(error, "Error deleting item");
     }

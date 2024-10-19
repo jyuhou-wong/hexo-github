@@ -6,12 +6,23 @@ import {
   hexoExec,
 } from "../services/hexoService";
 import open from "open";
-import { formatAddress, handleError, isValidPath, revealItem } from "../utils";
+import {
+  formatAddress,
+  handleError,
+  isValidFileName,
+  isValidPath,
+  revealItem,
+} from "../utils";
 import { pushToGitHubPages } from "../services/githubService";
 import type { Server } from "http";
-import { EXT_HEXO_STARTER_DIR, SOURCE_POSTS_DIRNAME } from "../services/config";
+import {
+  EXT_HEXO_STARTER_DIR,
+  SOURCE_DRAFTS_DIRNAME,
+  SOURCE_POSTS_DIRNAME,
+} from "../services/config";
 import { basename, join } from "path";
-import { existsSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
+import { BlogsTreeDataProvider } from "../providers/blogsTreeDataProvider";
 
 let server: Server;
 let serverStatus: boolean = false;
@@ -41,6 +52,171 @@ export const executeHexoCommand = async (_context: vscode.ExtensionContext) => {
     "Please enter a command without hexo, e.g., new --path test/test",
     hexoExec
   );
+};
+
+// Create a new Hexo blog item
+export const addItem = async (args: any, context: vscode.ExtensionContext) => {
+  const config = await getHexoConfig();
+
+  try {
+    // 检查是否是根目录
+    if (!args.resourceUri) {
+      // 博客
+      if (args.label == BlogsTreeDataProvider.getLabel(SOURCE_POSTS_DIRNAME)) {
+        const options = ["Sub Route", "Blog"];
+        const selection = await vscode.window.showQuickPick(options, {
+          placeHolder: "Choose an option",
+        });
+
+        if (selection === "Sub Route") {
+          const name = await vscode.window.showInputBox({
+            placeHolder: "Pleast enter the name",
+          });
+          if (!name) return;
+          if (!isValidFileName(name)) throw new Error("Name is invalid");
+
+          const path = join(
+            EXT_HEXO_STARTER_DIR,
+            config.source_dir,
+            SOURCE_POSTS_DIRNAME,
+            name
+          );
+          if (existsSync(path)) throw new Error(`${name} is existed`);
+          mkdirSync(path, { recursive: true });
+        } else {
+          const name = await vscode.window.showInputBox({
+            placeHolder: "Pleast enter the name",
+          });
+          if (!name) return;
+          if (!isValidFileName(name)) throw new Error("Name is invalid");
+
+          const path = join(
+            EXT_HEXO_STARTER_DIR,
+            config.source_dir,
+            SOURCE_POSTS_DIRNAME,
+            `${name}.md`
+          );
+          if (existsSync(path)) throw new Error(`Blog ${name} is existed`);
+
+          await hexoExec(`new "${name}"`);
+
+          // 打开文件进行编辑
+          const document = await vscode.workspace.openTextDocument(path);
+          await vscode.window.showTextDocument(document);
+          vscode.window.showInformationMessage(
+            `Blog ${name} created and opened for editing.`
+          );
+
+          await revealItem(Uri.file(path), context);
+        }
+      }
+
+      // 草稿
+      else if (
+        args.label == BlogsTreeDataProvider.getLabel(SOURCE_DRAFTS_DIRNAME)
+      ) {
+        const name = await vscode.window.showInputBox({
+          placeHolder: "Pleast enter the name",
+        });
+        if (!name) return;
+        if (!isValidFileName(name)) throw new Error("Name is invalid");
+
+        const draftPath = join(
+          EXT_HEXO_STARTER_DIR,
+          config.source_dir,
+          SOURCE_DRAFTS_DIRNAME,
+          `${name}.md`
+        );
+
+        if (existsSync(draftPath)) throw new Error("Page is existed");
+
+        await hexoExec(`new draft "${name}"`);
+
+        // 打开草稿进行编辑
+        const document = await vscode.workspace.openTextDocument(draftPath);
+        await vscode.window.showTextDocument(document);
+        vscode.window.showInformationMessage(
+          `Page ${basename(draftPath)} created and opened for editing.`
+        );
+
+        await revealItem(Uri.file(draftPath), context);
+      } else if (args.label == BlogsTreeDataProvider.getLabel()) {
+        const name = await vscode.window.showInputBox({
+          placeHolder: "Pleast enter the name",
+        });
+        if (!name) return;
+        if (!isValidFileName(name)) throw new Error("Name is invalid");
+
+        const pagePath = join(
+          EXT_HEXO_STARTER_DIR,
+          config.source_dir,
+          name,
+          "index.md"
+        );
+
+        if (existsSync(pagePath)) throw new Error("Page is existed");
+
+        await hexoExec(`new page "${name}"`);
+
+        // 打开文件进行编辑
+        const document = await vscode.workspace.openTextDocument(pagePath);
+        await vscode.window.showTextDocument(document);
+        vscode.window.showInformationMessage(
+          `Page ${name} created and opened for editing.`
+        );
+
+        await revealItem(Uri.file(pagePath), context);
+      }
+    } else {
+      const options = ["Sub Route", "Blog"];
+      const selection = await vscode.window.showQuickPick(options, {
+        placeHolder: "Choose an option",
+      });
+
+      if (selection === "Sub Route") {
+        const name = await vscode.window.showInputBox({
+          placeHolder: "Pleast enter the name",
+        });
+        if (!name) return;
+        if (!isValidFileName(name)) throw new Error("Name is invalid");
+
+        const path = join(args.resourceUri.fsPath, name);
+        if (existsSync(path)) throw new Error(`${name} is existed`);
+        mkdirSync(path, { recursive: true });
+      } else {
+        const name = await vscode.window.showInputBox({
+          placeHolder: "Pleast enter the name",
+        });
+        if (!name) return;
+        if (!isValidFileName(name)) throw new Error("Name is invalid");
+        const path = join(args.resourceUri.fsPath, `${name}.md`);
+
+        const postDir = join(
+          EXT_HEXO_STARTER_DIR,
+          config.source_dir,
+          SOURCE_POSTS_DIRNAME
+        );
+
+        const relativePath = path
+          .substring(postDir.length)
+          .replace(/[/\\]/g, "/")
+          .replace(/\.md$/i, "");
+        if (existsSync(path)) throw new Error(`Blog ${name} is existed`);
+        await hexoExec(`new --path "${relativePath}"`);
+
+        // 打开文件进行编辑
+        const document = await vscode.workspace.openTextDocument(path);
+        await vscode.window.showTextDocument(document);
+        vscode.window.showInformationMessage(
+          `Blog ${basename(path)} created and opened for editing.`
+        );
+
+        await revealItem(Uri.file(path), context);
+      }
+    }
+  } catch (error) {
+    handleError(error, "Failed to create item");
+  }
 };
 
 // Create a new Hexo blog post
