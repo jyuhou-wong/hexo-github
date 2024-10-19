@@ -9,7 +9,7 @@ import {
 import * as vscode from "vscode";
 
 import { readdir } from "fs/promises";
-import { basename, extname, join } from "path";
+import { basename, join } from "path";
 import {
   EXT_HEXO_STARTER_DIR,
   SOURCE_POSTS_DIRNAME,
@@ -115,7 +115,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
             arguments: [uri], // Arguments for the command
           };
           this.uriCache.set(uri.toString(), item); // Cache the TreeItem
-          item.contextValue = extname(fullPath);
+          item.contextValue = fullPath;
           return item; // Return the created item
         });
       return items; // Return the list of page items
@@ -154,7 +154,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
           };
         }
 
-        item.contextValue = extname(fullPath);
+        item.contextValue = fullPath;
 
         this.uriCache.set(uri.toString(), item); // Cache the TreeItem
         return item; // Return the created item

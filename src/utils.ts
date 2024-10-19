@@ -235,21 +235,42 @@ export const revealItem = async (
  * @param {vscode.Uri} uri - The URI of the item to delete.
  */
 export const deleteItem = async (uri: vscode.Uri) => {
+  const isPage: boolean = /[\\/]+index\.md$/i.test(uri.fsPath);
+
+  const isBlog: boolean = /[^\\/]+\.md$/i.test(uri.fsPath);
+
+  let prompt: string = "";
+
+  if (isPage) {
+    const name = path.basename(uri.fsPath.replace(/[\\/]+index.md$/i, ""));
+    prompt = `Are you sure you want to delete page "${name}"`;
+  } else if (isBlog) {
+    const name = path.basename(uri.fsPath.replace(/\.md$/i, ""));
+    prompt = `Are you sure you want to delete blog "${name}"`;
+  } else {
+    const name = path.basename(uri.fsPath);
+    const isDirectory = fs.statSync(uri.fsPath).isDirectory();
+    prompt = isDirectory
+      ? `Are you sure you want to delete the directory "${name}" and all its files?`
+      : `Are you sure you want to delete "${name}"`;
+  }
+
   // Ask for user confirmation
   const confirmation = await vscode.window.showWarningMessage(
-    `Are you sure you want to delete "${uri.fsPath}"?`,
+    prompt,
     { modal: true },
-    "Delete",
-    "Cancel"
+    "Delete"
   );
 
   if (confirmation === "Delete") {
     try {
       // Delete the item (file or directory)
       fs.rmSync(uri.fsPath, { recursive: true, force: true });
-      vscode.window.showInformationMessage(`Deleted "${uri.fsPath}" successfully.`);
+      vscode.window.showInformationMessage(
+        `Deleted "${uri.fsPath}" successfully.`
+      );
     } catch (error) {
-      handleError(error, "Error deleting item")
+      handleError(error, "Error deleting item");
     }
   }
 };

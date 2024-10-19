@@ -73,7 +73,7 @@
           "dark": "resources/dark/hexo-github-preview.svg",
           "light": "resources/light/hexo-github-preview.svg"
         },
-        "title": "Local preview"
+        "title": "Preview"
       },
       {
         "command": "hexo-github.addItem",
@@ -81,7 +81,7 @@
           "dark": "resources/dark/hexo-github-add.svg",
           "light": "resources/light/hexo-github-add.svg"
         },
-        "title": "Delete"
+        "title": "Add"
       },
       {
         "command": "hexo-github.deleteItem",
@@ -104,17 +104,17 @@
       "view/item/context": [
         {
           "command": "hexo-github.localPreview",
-          "when": "view == hexo-github-blogs && viewItem == .md",
+          "when": "view == hexo-github-blogs && viewItem =~ /\\.md$/i",
           "group": "inline"
         },
         {
           "command": "hexo-github.addItem",
-          "when": "view == hexo-github-blogs && !(viewItem =~ /\\..*$/i)",
+          "when": "view == hexo-github-blogs && !(viewItem =~ /\\.[^\\\/]*$/i)",
           "group": "inline"
         },
         {
           "command": "hexo-github.deleteItem",
-          "when": "view == hexo-github-blogs && viewItem =~ /\\..*$/i",
+          "when": "view == hexo-github-blogs && viewItem",
           "group": "inline"
         }
       ],
@@ -134,12 +134,12 @@
         {
           "command": "hexo-github.startServer",
           "group": "hexo-github",
-          "when": "hexo-github.serverStatus == false"
+          "when": "!hexo-github.serverStatus"
         },
         {
           "command": "hexo-github.stopServer",
           "group": "hexo-github",
-          "when": "hexo-github.serverStatus == true"
+          "when": "hexo-github.serverStatus"
         },
         {
           "command": "hexo-github.new",
