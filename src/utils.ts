@@ -274,7 +274,6 @@ export const deleteItem = async (uri: vscode.Uri) => {
   let prompt: string = "";
 
   if (isPage) {
-    /^(?!.*\.[^\/]*$).*$/i
     path = path.replace(/[\\/]+index.md$/i, "");
     const name = basename(path);
     prompt = `Are you sure you want to delete page "${name}"`;
@@ -305,4 +304,44 @@ export const deleteItem = async (uri: vscode.Uri) => {
       handleError(error, "Error deleting item");
     }
   }
+};
+
+/**
+ * Creates a new directory.
+ * @param path - The path of the directory to create.
+ */
+export const createDirectory = (path: string) => {
+  mkdirSync(path, { recursive: true });
+  vscode.window.showInformationMessage(
+    `Subdirectory ${basename(path)} created.`
+  );
+};
+
+/**
+ * Opens an existing file.
+ * @param path - The path of the file to open.
+ */
+export const openFile = async (path: string) => {
+  const document = await vscode.workspace.openTextDocument(path);
+  await vscode.window.showTextDocument(document);
+  vscode.window.showInformationMessage(
+    `File ${basename(path)} opened for editing.`
+  );
+};
+
+/**
+ * Prompts the user for a name.
+ * @param placeholder - The placeholder text for the input box.
+ * @returns Returns the name if valid, otherwise undefined.
+ */
+export const promptForName = async (
+  placeholder: string
+): Promise<string | undefined> => {
+  const name = await vscode.window.showInputBox({ placeHolder: placeholder });
+  if (!name) return undefined;
+  if (!isValidFileName(name)) {
+    vscode.window.showErrorMessage("Invalid name. Please try again.");
+    return undefined; // Return undefined to indicate an invalid name
+  }
+  return name;
 };
