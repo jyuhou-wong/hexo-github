@@ -69,7 +69,7 @@ export const execAsync = promisify(exec);
 export const installNpmModules = async (dirPath: string) => {
   try {
     await execAsync("npm install", { cwd: dirPath });
-    console.log("NPM modules installed successfully.");
+    vscode.window.showInformationMessage("NPM modules installed successfully.");
   } catch (error) {
     handleError(error, "Error installing NPM modules");
   }
@@ -225,6 +225,31 @@ export const revealItem = async (
         expand: true,
         focus: true,
       });
+    }
+  }
+};
+
+/**
+ * Deletes an item (file or directory) after user confirmation.
+ *
+ * @param {vscode.Uri} uri - The URI of the item to delete.
+ */
+export const deleteItem = async (uri: vscode.Uri) => {
+  // Ask for user confirmation
+  const confirmation = await vscode.window.showWarningMessage(
+    `Are you sure you want to delete "${uri.fsPath}"?`,
+    { modal: true },
+    "Delete",
+    "Cancel"
+  );
+
+  if (confirmation === "Delete") {
+    try {
+      // Delete the item (file or directory)
+      fs.rmSync(uri.fsPath, { recursive: true, force: true });
+      vscode.window.showInformationMessage(`Deleted "${uri.fsPath}" successfully.`);
+    } catch (error) {
+      handleError(error, "Error deleting item")
     }
   }
 };

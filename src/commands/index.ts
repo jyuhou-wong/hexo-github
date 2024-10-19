@@ -13,6 +13,7 @@ import {
   stopHexoServer,
   deployBlog,
 } from "./hexoCommands";
+import { deleteItem } from "../utils";
 
 // Register all commands
 const commands = [
@@ -36,4 +37,10 @@ export const registerCommands = (context: vscode.ExtensionContext) => {
       )
     );
   });
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("hexo-github.deleteItem", (args) =>
+      deleteItem(args.resourceUri)
+    )
+  );
 };

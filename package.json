@@ -76,6 +76,22 @@
         "title": "Local preview"
       },
       {
+        "command": "hexo-github.addItem",
+        "icon": {
+          "dark": "resources/dark/hexo-github-add.svg",
+          "light": "resources/light/hexo-github-add.svg"
+        },
+        "title": "Delete"
+      },
+      {
+        "command": "hexo-github.deleteItem",
+        "icon": {
+          "dark": "resources/dark/hexo-github-delete.svg",
+          "light": "resources/light/hexo-github-delete.svg"
+        },
+        "title": "Delete"
+      },
+      {
         "command": "hexo-github.deploy",
         "title": "Deploy blog"
       },
@@ -89,6 +105,16 @@
         {
           "command": "hexo-github.localPreview",
           "when": "view == hexo-github-blogs && viewItem == .md",
+          "group": "inline"
+        },
+        {
+          "command": "hexo-github.addItem",
+          "when": "view == hexo-github-blogs && !(viewItem =~ /\\..*$/i)",
+          "group": "inline"
+        },
+        {
+          "command": "hexo-github.deleteItem",
+          "when": "view == hexo-github-blogs && viewItem =~ /\\..*$/i",
           "group": "inline"
         }
       ],
