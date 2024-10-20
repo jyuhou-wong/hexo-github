@@ -10,7 +10,6 @@ import {
   createDirectory,
   formatAddress,
   handleError,
-  isValidFileName,
   isValidPath,
   openFile,
   promptForName,
@@ -24,7 +23,7 @@ import {
   SOURCE_POSTS_DIRNAME,
 } from "../services/config";
 import { basename, join, sep } from "path";
-import { existsSync, mkdirSync } from "fs";
+import { existsSync } from "fs";
 import { BlogsTreeDataProvider } from "../providers/blogsTreeDataProvider";
 
 let server: Server;
@@ -135,7 +134,7 @@ export const addItem = async (args: any, context: vscode.ExtensionContext) => {
       }
       // 处理博客
       else if (label === BlogsTreeDataProvider.getLabel(SOURCE_POSTS_DIRNAME)) {
-        const options = ["Sub Route", "Blog"];
+        const options = ["Blog", "Sub Route"];
         const selection = await vscode.window.showQuickPick(options, {
           placeHolder: "Choose an option",
         });
@@ -158,7 +157,7 @@ export const addItem = async (args: any, context: vscode.ExtensionContext) => {
       }
     } else {
       // 处理在文章目录中创建子路由或博客的逻辑
-      const options = ["Sub Route", "Blog"];
+      const options = ["Blog", "Sub Route"];
       const selection = await vscode.window.showQuickPick(options, {
         placeHolder: "Choose an option",
       });
@@ -253,6 +252,32 @@ export const stopHexoServer = async (
     vscode.window.showInformationMessage("Successfully stoped server");
   } catch (error) {
     handleError(error, "Failed to stop Hexo server");
+  }
+};
+
+// Start Hexo server
+export const publishDraft = async (
+  args: any,
+  context: vscode.ExtensionContext
+) => {
+  const name = basename(args.resourceUri.fsPath, ".md");
+  try {
+    await hexoExec(`publish ${name} --debug`);
+
+    const config = await getHexoConfig();
+    const postPath = join(
+      EXT_HEXO_STARTER_DIR,
+      config.source_dir,
+      SOURCE_POSTS_DIRNAME,
+      `${name}.md`
+    );
+
+    await openFile(postPath);
+    revealItem(Uri.file(postPath), context);
+
+    vscode.window.showInformationMessage(`Successfully published ${name}`);
+  } catch (error) {
+    handleError(error, `Failed to publish ${name}`);
   }
 };
 

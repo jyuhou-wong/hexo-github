@@ -13,6 +13,7 @@ import {
   stopHexoServer,
   deployBlog,
   addItem,
+  publishDraft,
 } from "./hexoCommands";
 import { deleteItem } from "../utils";
 
@@ -27,6 +28,7 @@ const commands = [
   { command: "hexo-github.startServer", callback: startHexoServer },
   { command: "hexo-github.stopServer", callback: stopHexoServer },
   { command: "hexo-github.localPreview", callback: localPreview },
+  { command: "hexo-github.publish", callback: publishDraft },
   { command: "hexo-github.test", callback: testSomething },
 ];
 

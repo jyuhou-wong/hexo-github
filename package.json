@@ -25,7 +25,7 @@
       "activitybar": [
         {
           "id": "hexo-github-explorer",
-          "title": "Hexo GitHub Explorer",
+          "title": "Hexo GitHub",
           "icon": "resources/hexo-github-explorer.svg"
         }
       ]
@@ -39,6 +39,30 @@
       ]
     },
     "commands": [
+      {
+        "command": "hexo-github.openSourceGit",
+        "icon": {
+          "dark": "resources/dark/hexo-github-github.svg",
+          "light": "resources/light/hexo-github-github.svg"
+        },
+        "title": "Open Source Repository"
+      },
+      {
+        "command": "hexo-github.openPagesGit",
+        "icon": {
+          "dark": "resources/dark/hexo-github-pages-git.svg",
+          "light": "resources/light/hexo-github-pages-git.svg"
+        },
+        "title": "Open Pages Repository"
+      },
+      {
+        "command": "hexo-github.openPages",
+        "icon": {
+          "dark": "resources/dark/hexo-github-home.svg",
+          "light": "resources/light/hexo-github-home.svg"
+        },
+        "title": "Open GitHub Pages"
+      },
       {
         "command": "hexo-github.loginToGitHub",
         "title": "Login to GitHub"
@@ -84,6 +108,14 @@
         "title": "Add"
       },
       {
+        "command": "hexo-github.publish",
+        "icon": {
+          "dark": "resources/dark/hexo-github-publish.svg",
+          "light": "resources/light/hexo-github-publish.svg"
+        },
+        "title": "Publish"
+      },
+      {
         "command": "hexo-github.deleteItem",
         "icon": {
           "dark": "resources/dark/hexo-github-delete.svg",
@@ -101,6 +133,23 @@
       }
     ],
     "menus": {
+      "view/title": [
+        {
+          "command": "hexo-github.openSourceGit",
+          "when": "view == hexo-github-blogs",
+          "group": "navigation"
+        },
+        {
+          "command": "hexo-github.openPagesGit",
+          "when": "view == hexo-github-blogs",
+          "group": "navigation"
+        },
+        {
+          "command": "hexo-github.openPages",
+          "when": "view == hexo-github-blogs",
+          "group": "navigation"
+        }
+      ],
       "view/item/context": [
         {
           "command": "hexo-github.localPreview",
@@ -110,6 +159,11 @@
         {
           "command": "hexo-github.addItem",
           "when": "view == hexo-github-blogs && !(viewItem =~ /\\.[^/\\\\]+$/i)",
+          "group": "inline"
+        },
+        {
+          "command": "hexo-github.publish",
+          "when": "view == hexo-github-blogs && viewItem =~ /_drafts[/\\\\]+[^/\\\\]+\\.md$/i",
           "group": "inline"
         },
         {
