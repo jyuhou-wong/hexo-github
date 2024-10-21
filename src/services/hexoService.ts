@@ -6,9 +6,17 @@ import {
   getArgs,
   handleError,
   installNpmModules,
+  openFile,
+  revealItem,
 } from "../utils";
-import { EXT_HEXO_STARTER_DIR } from "./config";
-import { join } from "path";
+import {
+  EXT_HEXO_STARTER_DIR,
+  SOURCE_DRAFTS_DIRNAME,
+  SOURCE_POSTS_DIRNAME,
+} from "./config";
+import { join, sep } from "path";
+import { existsSync } from "fs";
+import { Uri } from "vscode";
 
 interface Args {
   debug?: boolean;
@@ -104,4 +112,57 @@ export const getPreviewUrl = async (
 export const getHexoConfig = async () => {
   const hexo = await initializeHexo();
   return hexo.config;
+};
+
+// 处理创建文件的通用逻辑
+export const handleCreateFile = async (
+  name: string,
+  type: string,
+  context: vscode.ExtensionContext,
+  parentPath?: string
+) => {
+  const config = await getHexoConfig();
+  let path: string;
+
+  if (type === "Page") {
+    path = join(
+      EXT_HEXO_STARTER_DIR,
+      config.source_dir,
+      parentPath || name,
+      "index.md"
+    );
+    if (existsSync(path)) throw new Error(`Page ${name} already exists`);
+    await hexoExec(`new page "${name}"`);
+  } else if (type === "Draft") {
+    path = join(
+      EXT_HEXO_STARTER_DIR,
+      config.source_dir,
+      SOURCE_DRAFTS_DIRNAME,
+      `${name}.md`
+    );
+    if (existsSync(path)) throw new Error(`Draft ${name} already exists`);
+    await hexoExec(`new draft "${name}"`);
+  } else {
+    // Assume it's a Blog
+    const postDir = join(
+      EXT_HEXO_STARTER_DIR,
+      config.source_dir,
+      SOURCE_POSTS_DIRNAME
+    );
+
+    const relativePath = parentPath
+      ? parentPath.substring(postDir.length + sep.length).replace(/[/\\]/g, "/")
+      : "";
+
+    path = join(parentPath ?? postDir, `${name}.md`);
+    if (existsSync(path)) {
+      await openFile(path);
+      await revealItem(Uri.file(path), context);
+      throw new Error(`Blog ${name} already exists`);
+    }
+    await hexoExec(`new --path "${relativePath}/${name}"`);
+  }
+
+  await openFile(path);
+  await revealItem(Uri.file(path), context);
 };

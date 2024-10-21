@@ -16,9 +16,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onView:hexo-github-blogs"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -48,7 +46,7 @@
         "title": "Open Source Repository"
       },
       {
-        "command": "hexo-github.openPagesGit",
+        "command": "hexo-github.openPageGit",
         "icon": {
           "dark": "resources/dark/hexo-github-pages-git.svg",
           "light": "resources/light/hexo-github-pages-git.svg"
@@ -56,7 +54,7 @@
         "title": "Open Pages Repository"
       },
       {
-        "command": "hexo-github.openPages",
+        "command": "hexo-github.openPage",
         "icon": {
           "dark": "resources/dark/hexo-github-home.svg",
           "light": "resources/light/hexo-github-home.svg"
@@ -68,12 +66,12 @@
         "title": "Login to GitHub"
       },
       {
-        "command": "hexo-github.pullHexoRepo",
-        "title": "Pull Hexo Repository"
+        "command": "hexo-github.pullHexo",
+        "title": "Pull Hexo"
       },
       {
-        "command": "hexo-github.pushHexoRepo",
-        "title": "Push Hexo Repository"
+        "command": "hexo-github.pushHexo",
+        "title": "Push Hexo"
       },
       {
         "command": "hexo-github.cmd",
@@ -140,12 +138,12 @@
           "group": "navigation"
         },
         {
-          "command": "hexo-github.openPagesGit",
+          "command": "hexo-github.openPageGit",
           "when": "view == hexo-github-blogs",
           "group": "navigation"
         },
         {
-          "command": "hexo-github.openPages",
+          "command": "hexo-github.openPage",
           "when": "view == hexo-github-blogs",
           "group": "navigation"
         }
@@ -174,11 +172,11 @@
       ],
       "editor/context": [
         {
-          "command": "hexo-github.pullHexoRepo",
+          "command": "hexo-github.pullHexo",
           "group": "hexo-github"
         },
         {
-          "command": "hexo-github.pushHexoRepo",
+          "command": "hexo-github.pushHexo",
           "group": "hexo-github"
         },
         {

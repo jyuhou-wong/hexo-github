@@ -24,7 +24,8 @@ import { copyFiles, installNpmModules } from "../utils";
 import type { ExcludePattern } from "../utils";
 
 // Ensure configuration directory exists
-if (!fs.existsSync(EXT_CONFIG_PATH)) fs.mkdirSync(EXT_CONFIG_PATH, { recursive: true });
+if (!fs.existsSync(EXT_CONFIG_PATH))
+  fs.mkdirSync(EXT_CONFIG_PATH, { recursive: true });
 
 export const loadAccessToken = () => {
   let accessToken: string | null = null;
@@ -162,7 +163,7 @@ const initializeLocalRepo = async () => {
 };
 
 // Push changes to the Hexo GitHub repository
-export const pushHexoRepo = async () => {
+export const pushHexo = async () => {
   const octokit = await getOctokitInstance();
   const repoExists = await checkRepoExists("hexo-github-db", octokit);
   const localRepoExists = fs.existsSync(path.join(EXT_HOME_DIR, ".git"));
@@ -193,7 +194,7 @@ export const pushHexoRepo = async () => {
 };
 
 // Pull Hexo repository
-export const pullHexoRepo = async () => {
+export const pullHexo = async () => {
   const octokit = await getOctokitInstance();
   const repoExists = await checkRepoExists("hexo-github-db", octokit);
   const localRepoPath = path.join(EXT_HOME_DIR, ".git");
@@ -209,17 +210,17 @@ export const pullHexoRepo = async () => {
       }
     } else {
       throw new Error(
-        "Local repository does not exist. Please run pushHexoRepo first."
+        "Local repository does not exist. Please run pushHexo first."
       );
     }
   } else {
     if (!localRepoExists) {
       throw new Error(
-        "Repository hexo-github-db does not exist on GitHub. Please run pushHexoRepo to create it."
+        "Repository hexo-github-db does not exist on GitHub. Please run pushHexo to create it."
       );
     } else {
       throw new Error(
-        "Local repository exists but remote does not. Please run pushHexoRepo to create it."
+        "Local repository exists but remote does not. Please run pushHexo to create it."
       );
     }
   }
@@ -282,4 +283,56 @@ export const pushToGitHubPages = async () => {
   await git.commit("Deploy to GitHub Pages");
   await git.push("origin", "main", { "--force": null });
   console.log("Pushed to GitHub Pages successfully.");
+};
+
+export const openDatabaseGit = async () => {
+  const octokit = await getOctokitInstance();
+
+  const { data: user } = await octokit.rest.users.getAuthenticated();
+
+  const dbRepoExists = await checkRepoExists("hexo-github-db", octokit);
+
+  if (!dbRepoExists) {
+    throw new Error(`"hexo-github-db" not found`);
+  }
+
+  const dbGitUrl = `https://github.com/${user.login}/hexo-github-db`;
+  open(dbGitUrl);
+};
+
+export const openPageGit = async () => {
+  const octokit = await getOctokitInstance();
+
+  const { data: user } = await octokit.rest.users.getAuthenticated();
+
+  const userPageRepoExists = await checkRepoExists(
+    `${user.login}.github.io`,
+    octokit
+  );
+
+  if (!userPageRepoExists) {
+    throw new Error(`"${user.login}.github.io" not found`);
+  }
+
+  const pageGitUrl = `https://github.com/${user.login}/${user.login}.github.io`;
+  open(pageGitUrl);
+};
+
+// Open GitHub Pages
+export const openUserPage = async () => {
+  const octokit = await getOctokitInstance();
+
+  const { data: user } = await octokit.rest.users.getAuthenticated();
+
+  const userPageRepoExists = await checkRepoExists(
+    `${user.login}.github.io`,
+    octokit
+  );
+
+  if (!userPageRepoExists) {
+    throw new Error(`"${user.login}.github.io" not found`);
+  }
+
+  const userPageUrl = `https://${user.login}.github.io`;
+  open(userPageUrl);
 };

@@ -64,7 +64,7 @@ export const handleError = (
   let errorMessage: string;
 
   if (error instanceof Error) {
-    errorMessage = error.message;
+    errorMessage = `${message}: ${error.message}`;
   } else {
     errorMessage = `${message}: An unknown error occurred`;
   }
@@ -344,4 +344,53 @@ export const promptForName = async (
     return undefined; // Return undefined to indicate an invalid name
   }
   return name;
+};
+
+/**
+ * Executes a user command after prompting for input.
+ * @param placeholder - The placeholder text for the input box.
+ * @param action - A function that takes the command string and returns a Promise.
+ */
+export const executeUserCommand = async (
+  placeholder: string,
+  action: (cmd: string) => Promise<void>
+) => {
+  // Show an input box to prompt the user for a command
+  const userInput = await vscode.window.showInputBox({
+    placeHolder: placeholder,
+  });
+
+  if (userInput) {
+    // Remove the "hexo" prefix from the input command and trim whitespace
+    const cmd = userInput.replace(/^\s*hexo\s*/i, "").trim();
+    try {
+      // Execute the action with the cleaned command
+      await action(cmd);
+    } catch (error) {
+      // Handle any errors that occur during command execution
+      handleError(error, "Failed to execute command");
+    }
+  } else {
+    // Warn the user if no command was entered
+    vscode.window.showWarningMessage("No command entered!");
+  }
+};
+
+/**
+ * Executes an asynchronous action with feedback messages.
+ * @param action - A function that returns a Promise representing the action to execute.
+ * @param successMessage - The message to display upon successful execution.
+ * @param errorMessage - The message to display if an error occurs.
+ */
+export const executeWithFeedback = async (
+  action: () => Promise<void>,
+  successMessage: string,
+  errorMessage: string
+) => {
+  try {
+    await action(); // Execute the provided action
+    vscode.window.showInformationMessage(successMessage); // Show success message
+  } catch (error) {
+    handleError(error, errorMessage); // Handle errors and show error message
+  }
 };

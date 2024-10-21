@@ -3,11 +3,13 @@ import * as vscode from "vscode";
 import {
   getHexoConfig,
   getPreviewUrl,
+  handleCreateFile,
   hexoExec,
 } from "../services/hexoService";
 import open from "open";
 import {
   createDirectory,
+  executeUserCommand,
   formatAddress,
   handleError,
   isValidPath,
@@ -29,24 +31,6 @@ import { BlogsTreeDataProvider } from "../providers/blogsTreeDataProvider";
 let server: Server;
 let serverStatus: boolean = false;
 
-const executeUserCommand = async (
-  placeholder: string,
-  action: (cmd: string) => Promise<void>
-) => {
-  const userInput = await vscode.window.showInputBox({
-    placeHolder: placeholder,
-  });
-  if (userInput) {
-    const cmd = userInput.replace(/^\s*hexo\s*/i, "").trim();
-    try {
-      await action(cmd);
-    } catch (error) {
-      handleError(error, "Failed to execute command");
-    }
-  } else {
-    vscode.window.showWarningMessage("No command entered!");
-  }
-};
 
 // Execute Hexo command
 export const executeHexoCommand = async (_context: vscode.ExtensionContext) => {
@@ -54,59 +38,6 @@ export const executeHexoCommand = async (_context: vscode.ExtensionContext) => {
     "Please enter a command without hexo, e.g., new --path test/test",
     hexoExec
   );
-};
-
-// 处理创建文件的通用逻辑
-const handleCreateFile = async (
-  name: string,
-  type: string,
-  context: vscode.ExtensionContext,
-  parentPath?: string
-) => {
-  const config = await getHexoConfig();
-  let path: string;
-
-  if (type === "Page") {
-    path = join(
-      EXT_HEXO_STARTER_DIR,
-      config.source_dir,
-      parentPath || name,
-      "index.md"
-    );
-    if (existsSync(path)) throw new Error(`Page ${name} already exists`);
-    await hexoExec(`new page "${name}"`);
-  } else if (type === "Draft") {
-    path = join(
-      EXT_HEXO_STARTER_DIR,
-      config.source_dir,
-      SOURCE_DRAFTS_DIRNAME,
-      `${name}.md`
-    );
-    if (existsSync(path)) throw new Error(`Draft ${name} already exists`);
-    await hexoExec(`new draft "${name}"`);
-  } else {
-    // Assume it's a Blog
-    const postDir = join(
-      EXT_HEXO_STARTER_DIR,
-      config.source_dir,
-      SOURCE_POSTS_DIRNAME
-    );
-
-    const relativePath = parentPath
-      ? parentPath.substring(postDir.length + sep.length).replace(/[/\\]/g, "/")
-      : "";
-
-    path = join(parentPath ?? postDir, `${name}.md`);
-    if (existsSync(path)) {
-      await openFile(path);
-      await revealItem(Uri.file(path), context);
-      throw new Error(`Blog ${name} already exists`);
-    }
-    await hexoExec(`new --path "${relativePath}/${name}"`);
-  }
-
-  await openFile(path);
-  await revealItem(Uri.file(path), context);
 };
 
 // 主函数

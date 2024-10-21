@@ -1,41 +1,73 @@
 import * as vscode from "vscode";
 import {
-  pullHexoRepo,
-  pushHexoRepo,
+  openDatabaseGit,
+  openPageGit,
+  openUserPage,
+  pullHexo,
+  pushHexo,
   startOAuthLogin,
 } from "../services/githubService";
-import { handleError } from "../utils";
+import { executeWithFeedback, handleError } from "../utils";
 
 // Log in to GitHub
 export const loginToGitHub = async (context: vscode.ExtensionContext) => {
-  try {
-    await startOAuthLogin();
-    vscode.window.showInformationMessage("Successfully logged in to GitHub!");
-  } catch (error) {
-    handleError(error, "Login failed");
-  }
+  await executeWithFeedback(
+    startOAuthLogin,
+    "Successfully logged in to GitHub!",
+    "Login failed"
+  );
 };
 
 // Pull Hexo repository
 export const pullHexoRepository = async (context: vscode.ExtensionContext) => {
-  try {
-    await pullHexoRepo();
-    vscode.window.showInformationMessage(
-      "Successfully pulled hexo-github-db repository!"
-    );
-  } catch (error) {
-    handleError(error, "Pull failed");
-  }
+  await executeWithFeedback(
+    pullHexo,
+    "Successfully pulled hexo-github-db repository!",
+    "Pull failed"
+  );
 };
 
 // Push to Hexo repository
 export const pushHexoRepository = async (context: vscode.ExtensionContext) => {
-  try {
-    await pushHexoRepo();
-    vscode.window.showInformationMessage(
-      "Successfully pushed to hexo-github-db repository!"
-    );
-  } catch (error) {
-    handleError(error, "Push failed");
-  }
+  await executeWithFeedback(
+    pushHexo,
+    "Successfully pushed to hexo-github-db repository!",
+    "Push failed"
+  );
 };
+
+// Open source Git repository (assuming this should be a different action)
+export const openSourceRepository = async (
+  context: vscode.ExtensionContext
+) => {
+  await executeWithFeedback(
+    openDatabaseGit, // Assuming this should be a different function
+    "Successfully opened source repository!",
+    "Open failed"
+  );
+};
+
+// Open source Git repository (assuming this should be a different action)
+export const openPageRepository = async (
+  context: vscode.ExtensionContext
+) => {
+  await executeWithFeedback(
+    openPageGit, // Assuming this should be a different function
+    "Successfully opened github pages repository!",
+    "Open failed"
+  );
+};
+
+
+
+// Open source Git repository (assuming this should be a different action)
+export const openPage = async (
+  context: vscode.ExtensionContext
+) => {
+  await executeWithFeedback(
+    openUserPage, // Assuming this should be a different function
+    "Successfully opened github pages!",
+    "Open failed"
+  );
+};
+
