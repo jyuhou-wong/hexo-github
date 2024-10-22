@@ -55,7 +55,7 @@ Hexo-GitHub 是一个 VSCode 插件，旨在简化 Hexo 博客的管理与 GitHu
 
 插件提供了一个自定义视图，用于管理博客文件，如下图所示：
 
-![Hexo GitHub: Blogs](https://user-images.githubusercontent.com/your-image-path.png)
+![Hexo GitHub: Blogs](resources/treeview.png)
 
 #### 视图标题操作
 
