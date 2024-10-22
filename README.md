@@ -120,4 +120,3 @@ Hexo-GitHub 是一个 VSCode 插件，旨在简化 Hexo 博客的管理与 GitHu
 ## 许可证
 
 此项目使用 MIT 许可证。请参阅 [LICENSE](LICENSE) 文件以获取更多信息。
-

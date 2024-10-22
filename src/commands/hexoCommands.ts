@@ -31,7 +31,6 @@ import { BlogsTreeDataProvider } from "../providers/blogsTreeDataProvider";
 let server: Server;
 let serverStatus: boolean = false;
 
-
 // Execute Hexo command
 export const executeHexoCommand = async (_context: vscode.ExtensionContext) => {
   await executeUserCommand(
@@ -253,9 +252,46 @@ export const localPreview = async (
   }
 };
 
+// Apply theme
+export const applyTheme = async (
+  args: any,
+  context: vscode.ExtensionContext
+) => {
+  const filePath = args?.resourceUri?.fsPath ?? args?.fsPath;
+  const themeName = args?.label;
+
+  // 同时打开文件在活动编辑器
+  vscode.commands.executeCommand("vscode.open", Uri.file(filePath));
+
+  if (filePath) {
+    try {
+      vscode.window.showInformationMessage("Applying...");
+
+      // 应用主题
+      await hexoExec(`config theme ${themeName} --debug`);
+
+      // 清除缓存
+      await hexoExec("clean --debug");
+
+      // 停止服务器
+      if (serverStatus) {
+        await stopHexoServer(args, context);
+        await startHexoServer(args, context);
+      }
+
+      vscode.window.showInformationMessage(
+        `Successfully applied the theme "${themeName}".`
+      );
+    } catch (error) {
+      handleError(error, "Failed to apply themee");
+    }
+  }
+};
+
 // Test something
 export const testSomething = async () => {
   try {
+    // await searchNpmPackages("hexo-theme-", /^hexo-theme-[^-]+$/);
     vscode.window.showInformationMessage("Test completed successfully");
   } catch (error) {
     handleError(error, "Failed to test");

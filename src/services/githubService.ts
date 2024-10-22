@@ -24,8 +24,9 @@ import { copyFiles, installNpmModules } from "../utils";
 import type { ExcludePattern } from "../utils";
 
 // Ensure configuration directory exists
-if (!fs.existsSync(EXT_CONFIG_PATH))
+if (!fs.existsSync(EXT_CONFIG_PATH)) {
   fs.mkdirSync(EXT_CONFIG_PATH, { recursive: true });
+}
 
 export const loadAccessToken = () => {
   let accessToken: string | null = null;

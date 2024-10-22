@@ -2,7 +2,7 @@
   "name": "hexo-github",
   "displayName": "hexo-github",
   "description": "A VSCode extension for managing Hexo blogs with GitHub integration.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "Jyuhou Huang 黄宇豪 <jyuhou.wong@gmail.com>",
   "repository": {
     "type": "git",
@@ -126,6 +126,14 @@
         "title": "Deploy blog"
       },
       {
+        "command": "hexo-github.applyTheme",
+        "icon": {
+          "dark": "resources/dark/hexo-github-apply.svg",
+          "light": "resources/light/hexo-github-apply.svg"
+        },
+        "title": "Apply theme"
+      },
+      {
         "command": "hexo-github.test",
         "title": "Test"
       }
@@ -150,13 +158,18 @@
       ],
       "view/item/context": [
         {
+          "command": "hexo-github.applyTheme",
+          "when": "view == hexo-github-blogs && viewItem == themes",
+          "group": "inline"
+        },
+        {
           "command": "hexo-github.localPreview",
           "when": "view == hexo-github-blogs && viewItem =~ /\\.md$/i",
           "group": "inline"
         },
         {
           "command": "hexo-github.addItem",
-          "when": "view == hexo-github-blogs && !(viewItem =~ /\\.[^/\\\\]+$/i)",
+          "when": "view == hexo-github-blogs && !(viewItem =~ /\\.[^/\\\\]+$/i) && viewItem != themes",
           "group": "inline"
         },
         {

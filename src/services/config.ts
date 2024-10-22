@@ -10,6 +10,8 @@ export const REDIRECT_URI = "http://localhost:3000/auth/callback";
 export const SOURCE_POSTS_DIRNAME = "_posts";
 export const SOURCE_DRAFTS_DIRNAME = "_drafts";
 
+export const STARTER_THEMES_DIRNAME = "themes";
+
 // Extension Directories Name
 export const EXT_HEXO_STARTER_DIRNAME = "hexo-starter";
 export const EXT_CONFIG_NAME = "config.json";

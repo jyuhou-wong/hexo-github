@@ -7,7 +7,7 @@ import {
   pushHexo,
   startOAuthLogin,
 } from "../services/githubService";
-import { executeWithFeedback, handleError } from "../utils";
+import { executeWithFeedback } from "../utils";
 
 // Log in to GitHub
 export const loginToGitHub = async (context: vscode.ExtensionContext) => {
@@ -48,9 +48,7 @@ export const openSourceRepository = async (
 };
 
 // Open source Git repository (assuming this should be a different action)
-export const openPageRepository = async (
-  context: vscode.ExtensionContext
-) => {
+export const openPageRepository = async (context: vscode.ExtensionContext) => {
   await executeWithFeedback(
     openPageGit, // Assuming this should be a different function
     "Successfully opened github pages repository!",
@@ -58,16 +56,11 @@ export const openPageRepository = async (
   );
 };
 
-
-
 // Open source Git repository (assuming this should be a different action)
-export const openPage = async (
-  context: vscode.ExtensionContext
-) => {
+export const openPage = async (context: vscode.ExtensionContext) => {
   await executeWithFeedback(
     openUserPage, // Assuming this should be a different function
     "Successfully opened github pages!",
     "Open failed"
   );
 };
-

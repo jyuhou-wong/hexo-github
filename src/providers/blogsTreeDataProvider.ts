@@ -14,10 +14,12 @@ import {
   EXT_HEXO_STARTER_DIR,
   SOURCE_POSTS_DIRNAME,
   SOURCE_DRAFTS_DIRNAME,
+  STARTER_THEMES_DIRNAME,
 } from "../services/config";
 import { getHexoConfig } from "../services/hexoService";
 import { existsSync, statSync } from "fs";
 import { FSWatcher, watch } from "chokidar";
+import { getThemesInPackageJson, getThemesInThemesDir } from "../utils";
 
 // Define the TreeItem class which represents each item in the tree
 export class TreeItem extends vscode.TreeItem {
@@ -46,6 +48,8 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   // Get the label for the directory based on its name
   static getLabel(dirname: string = "Pages 页面") {
     switch (dirname) {
+      case STARTER_THEMES_DIRNAME:
+        return "Themes 主题"; // Label for themes directory
       case SOURCE_POSTS_DIRNAME:
         return "Articles 文章"; // Label for posts directory
       case SOURCE_DRAFTS_DIRNAME:
@@ -53,6 +57,63 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
       default:
         return "Pages 页面"; // Default label for other directories
     }
+  }
+
+  getTreeItem(element: TreeItem): TreeItem {
+    return element; // Return the TreeItem itself
+  }
+
+  // Get the children of a specified TreeItem
+  async getChildren(element?: TreeItem): Promise<TreeItem[]> {
+    if (!this.sourceDir) await this.setSourceDir(); // Ensure source directory is set
+
+    if (element?.collapsibleState === 0) {
+      return [];
+    }
+
+    if (
+      element?.label === BlogsTreeDataProvider.getLabel(SOURCE_POSTS_DIRNAME)
+    ) {
+      // If the element is the posts directory, get its children
+      return await this.getItems(
+        join(this.sourceDir, SOURCE_POSTS_DIRNAME),
+        element
+      );
+    }
+
+    if (
+      element?.label === BlogsTreeDataProvider.getLabel(SOURCE_DRAFTS_DIRNAME)
+    ) {
+      // If the element is the drafts directory, get its children
+      return await this.getItems(
+        join(this.sourceDir, SOURCE_DRAFTS_DIRNAME),
+        element
+      );
+    }
+
+    if (
+      element?.label === BlogsTreeDataProvider.getLabel(STARTER_THEMES_DIRNAME)
+    ) {
+      // If the element is the themes directory, get its children
+      return await this.getThemes(EXT_HEXO_STARTER_DIR, element);
+    }
+
+    if (element?.label === BlogsTreeDataProvider.getLabel()) {
+      // If the element is the main pages label, get the pages
+      return await this.getPages(this.sourceDir, element);
+    }
+
+    if (element?.uri) {
+      // If the element has a resource URI, get its children
+      return await this.getItems(element.uri.fsPath, element);
+    }
+
+    // Default case: return the root items
+    return await this.getRootItems(this.sourceDir);
+  }
+
+  getParent(element: TreeItem): vscode.ProviderResult<TreeItem> {
+    return element.parent; // Return the parent of the TreeItem
   }
 
   // Get the root items for the tree
@@ -66,7 +127,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
         )
         .map((dirent) => {
           const label = BlogsTreeDataProvider.getLabel(dirent.name); // Get label for the directory
-          const uri = Uri.file(dirent.parentPath);
+          const uri = Uri.file(join(rootDir, dirent.name));
           const collapsibleState =
             dirent.name !== SOURCE_POSTS_DIRNAME
               ? TreeItemCollapsibleState.Expanded
@@ -80,12 +141,43 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
           BlogsTreeDataProvider.getLabel(),
           TreeItemCollapsibleState.Expanded
         )
-      ); // Add the main label for pages
+      ); // Add the pages label
+
+      items.unshift(
+        new TreeItem(
+          BlogsTreeDataProvider.getLabel(STARTER_THEMES_DIRNAME),
+          TreeItemCollapsibleState.Collapsed
+        )
+      ); // Add the themes label
       return items; // Return the root items
     } catch (err) {
       console.error(err); // Log any errors
       return Promise.reject(err); // Reject the promise on error
     }
+  }
+
+  private async getThemes(dir: string, parent: TreeItem): Promise<TreeItem[]> {
+    const localThemes = await getThemesInThemesDir(dir, parent);
+    const npmThemes = await getThemesInPackageJson(dir, parent);
+
+    // Create an object from local themes for easy lookup
+    const localThemesObject = Object.fromEntries(
+      localThemes.map((v) => [v.label, v])
+    );
+
+    // Create an object from npm themes for easy lookup
+    const npmThemesObject = Object.fromEntries(
+      npmThemes.map((v) => [v.label, v])
+    );
+
+    // Combine both theme objects
+    const allThemesObject = Object.assign(npmThemesObject, localThemesObject);
+
+    const themes = Object.values(allThemesObject);
+
+    themes.forEach((v) => this.uriCache.set(v.resourceUri!!.toString(), v));
+
+    return themes; // Return all unique themes as an array
   }
 
   // Get the pages under a specific directory
@@ -166,56 +258,6 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
     }
   }
 
-  getTreeItem(element: TreeItem): TreeItem {
-    return element; // Return the TreeItem itself
-  }
-
-  // Get the children of a specified TreeItem
-  async getChildren(element?: TreeItem): Promise<TreeItem[]> {
-    if (!this.sourceDir) await this.setSourceDir(); // Ensure source directory is set
-
-    if (element?.collapsibleState === 0) {
-      return [];
-    }
-
-    if (
-      element?.label === BlogsTreeDataProvider.getLabel(SOURCE_POSTS_DIRNAME)
-    ) {
-      // If the element is the posts directory, get its children
-      return await this.getItems(
-        join(this.sourceDir, SOURCE_POSTS_DIRNAME),
-        element
-      );
-    }
-
-    if (
-      element?.label === BlogsTreeDataProvider.getLabel(SOURCE_DRAFTS_DIRNAME)
-    ) {
-      // If the element is the drafts directory, get its children
-      return await this.getItems(
-        join(this.sourceDir, SOURCE_DRAFTS_DIRNAME),
-        element
-      );
-    }
-
-    if (element?.label === BlogsTreeDataProvider.getLabel()) {
-      // If the element is the main pages label, get the pages
-      return await this.getPages(this.sourceDir, element);
-    }
-
-    if (element?.uri) {
-      // If the element has a resource URI, get its children
-      return await this.getItems(element.uri.fsPath, element);
-    }
-
-    // Default case: return the root items
-    return await this.getRootItems(this.sourceDir);
-  }
-
-  getParent(element: TreeItem): vscode.ProviderResult<TreeItem> {
-    return element.parent; // Return the parent of the TreeItem
-  }
-
   // Find a TreeItem by its URI
   async findNodeByUri(uri: vscode.Uri): Promise<TreeItem | undefined> {
     const cachedNode = this.uriCache.get(uri.toString()); // Check the cache first
@@ -258,7 +300,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   // Watch the source directory for changes
-  watchSourceDir(dir: string): void {
+  private watchSourceDir(dir: string): void {
     this.watcher = watch(dir, {
       persistent: true,
       ignoreInitial: true, // Ignore initial events
@@ -281,7 +323,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   // Set the source directory based on the Hexo configuration
-  async setSourceDir() {
+  private async setSourceDir() {
     const config = await getHexoConfig(); // Get Hexo configuration
     this.sourceDir = join(EXT_HEXO_STARTER_DIR, config.source_dir); // Set the source directory
     this.watchSourceDir(this.sourceDir); // Start watching the source directory

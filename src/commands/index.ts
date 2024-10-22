@@ -17,6 +17,7 @@ import {
   deployBlog,
   addItem,
   publishDraft,
+  applyTheme,
 } from "./hexoCommands";
 import { deleteItem } from "../utils";
 
@@ -35,6 +36,8 @@ const commands = [
   { command: "hexo-github.stopServer", callback: stopHexoServer },
   { command: "hexo-github.localPreview", callback: localPreview },
   { command: "hexo-github.publish", callback: publishDraft },
+  { command: "hexo-github.addItem", callback: addItem },
+  { command: "hexo-github.applyTheme", callback: applyTheme },
   { command: "hexo-github.test", callback: testSomething },
 ];
 
@@ -46,12 +49,6 @@ export const registerCommands = (context: vscode.ExtensionContext) => {
       )
     );
   });
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand("hexo-github.addItem", (args) =>
-      addItem(args, context)
-    )
-  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("hexo-github.deleteItem", (args) =>
