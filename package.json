@@ -98,6 +98,14 @@
         "title": "Preview"
       },
       {
+        "command": "hexo-github.addTheme",
+        "icon": {
+          "dark": "resources/dark/hexo-github-add.svg",
+          "light": "resources/light/hexo-github-add.svg"
+        },
+        "title": "Add theme"
+      },
+      {
         "command": "hexo-github.addItem",
         "icon": {
           "dark": "resources/dark/hexo-github-add.svg",
@@ -158,18 +166,23 @@
       ],
       "view/item/context": [
         {
-          "command": "hexo-github.applyTheme",
+          "command": "hexo-github.addTheme",
           "when": "view == hexo-github-blogs && viewItem == themes",
           "group": "inline"
         },
         {
+          "command": "hexo-github.applyTheme",
+          "when": "view == hexo-github-blogs && viewItem == theme",
+          "group": "inline"
+        },
+        {
           "command": "hexo-github.localPreview",
-          "when": "view == hexo-github-blogs && viewItem =~ /\\.md$/i",
+          "when": "view == hexo-github-blogs && (viewItem == page || viewItem =~ /\\.md$/i)",
           "group": "inline"
         },
         {
           "command": "hexo-github.addItem",
-          "when": "view == hexo-github-blogs && !(viewItem =~ /\\.[^/\\\\]+$/i) && viewItem != themes",
+          "when": "view == hexo-github-blogs && viewItem != themes && viewItem != theme && viewItem != page && !(viewItem =~ /\\.[^/\\\\]+$/i)",
           "group": "inline"
         },
         {
@@ -179,7 +192,7 @@
         },
         {
           "command": "hexo-github.deleteItem",
-          "when": "view == hexo-github-blogs && viewItem",
+          "when": "view == hexo-github-blogs && viewItem != themes && viewItem",
           "group": "inline"
         }
       ],

@@ -16,6 +16,7 @@ import {
   openFile,
   promptForName,
   revealItem,
+  searchNpmPackages,
 } from "../utils";
 import { pushToGitHubPages } from "../services/githubService";
 import type { Server } from "http";
@@ -286,6 +287,19 @@ export const applyTheme = async (
       handleError(error, "Failed to apply themee");
     }
   }
+};
+
+// add theme
+export const addTheme = async (
+  _args: any,
+  _context: vscode.ExtensionContext
+) => {
+  const options = await searchNpmPackages("hexo-theme-", /^hexo-theme-[^-]+$/);
+  const selection = await vscode.window.showQuickPick(options, {
+    placeHolder: "Choose an option",
+  });
+
+  console.log(selection);
 };
 
 // Test something

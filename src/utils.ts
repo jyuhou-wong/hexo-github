@@ -495,7 +495,7 @@ export const getThemesInThemesDir = async (
         title: "Open File",
         arguments: [uri], // Arguments for the command
       };
-      item.contextValue = "themes";
+      item.contextValue = "theme";
       return item;
     });
 
@@ -544,7 +544,7 @@ export const getThemesInPackageJson = (
       title: "Open File",
       arguments: [uri], // Arguments for the command
     };
-    item.contextValue = "themes";
+    item.contextValue = "theme";
     return item;
   };
 

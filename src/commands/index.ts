@@ -18,6 +18,7 @@ import {
   addItem,
   publishDraft,
   applyTheme,
+  addTheme,
 } from "./hexoCommands";
 import { deleteItem } from "../utils";
 
@@ -38,6 +39,7 @@ const commands = [
   { command: "hexo-github.publish", callback: publishDraft },
   { command: "hexo-github.addItem", callback: addItem },
   { command: "hexo-github.applyTheme", callback: applyTheme },
+  { command: "hexo-github.addTheme", callback: addTheme },
   { command: "hexo-github.test", callback: testSomething },
 ];
 

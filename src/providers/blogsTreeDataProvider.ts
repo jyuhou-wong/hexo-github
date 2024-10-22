@@ -136,19 +136,21 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
           return item;
         });
 
-      items.unshift(
-        new TreeItem(
-          BlogsTreeDataProvider.getLabel(),
-          TreeItemCollapsibleState.Expanded
-        )
-      ); // Add the pages label
+      const pages = new TreeItem(
+        BlogsTreeDataProvider.getLabel(),
+        TreeItemCollapsibleState.Expanded
+      );
+      pages.contextValue = "pages";
 
-      items.unshift(
-        new TreeItem(
-          BlogsTreeDataProvider.getLabel(STARTER_THEMES_DIRNAME),
-          TreeItemCollapsibleState.Collapsed
-        )
-      ); // Add the themes label
+      const themes = new TreeItem(
+        BlogsTreeDataProvider.getLabel(STARTER_THEMES_DIRNAME),
+        TreeItemCollapsibleState.Collapsed
+      );
+      themes.contextValue = "themes";
+
+      items.unshift(pages); // Add the pages label
+      items.unshift(themes); // Add the themes label
+
       return items; // Return the root items
     } catch (err) {
       console.error(err); // Log any errors
@@ -207,7 +209,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
             arguments: [uri], // Arguments for the command
           };
           this.uriCache.set(uri.toString(), item); // Cache the TreeItem
-          item.contextValue = fullPath;
+          item.contextValue = "page";
           return item; // Return the created item
         });
       return items; // Return the list of page items
