@@ -12,9 +12,11 @@ import { readdir } from "fs/promises";
 import { basename, join } from "path";
 import {
   EXT_HEXO_STARTER_DIR,
-  SOURCE_POSTS_DIRNAME,
-  SOURCE_DRAFTS_DIRNAME,
+  POSTS_DIRNAME,
+  DRAFTS_DIRNAME,
   STARTER_THEMES_DIRNAME,
+  HEXO_CONFIG_NAME,
+  HEXO_CONFIG_PATH,
 } from "../services/config";
 import { getHexoConfig } from "../services/hexoService";
 import { existsSync, statSync } from "fs";
@@ -46,13 +48,15 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   // Get the label for the directory based on its name
-  static getLabel(dirname: string = "Pages 页面") {
-    switch (dirname) {
+  static getLabel(name: string = "Pages 页面") {
+    switch (name) {
+      case HEXO_CONFIG_NAME:
+        return "Configure 配置";
       case STARTER_THEMES_DIRNAME:
         return "Themes 主题"; // Label for themes directory
-      case SOURCE_POSTS_DIRNAME:
+      case POSTS_DIRNAME:
         return "Articles 文章"; // Label for posts directory
-      case SOURCE_DRAFTS_DIRNAME:
+      case DRAFTS_DIRNAME:
         return "Drafts 草稿"; // Label for drafts directory
       default:
         return "Pages 页面"; // Default label for other directories
@@ -71,24 +75,14 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
       return [];
     }
 
-    if (
-      element?.label === BlogsTreeDataProvider.getLabel(SOURCE_POSTS_DIRNAME)
-    ) {
+    if (element?.label === BlogsTreeDataProvider.getLabel(POSTS_DIRNAME)) {
       // If the element is the posts directory, get its children
-      return await this.getItems(
-        join(this.sourceDir, SOURCE_POSTS_DIRNAME),
-        element
-      );
+      return await this.getItems(join(this.sourceDir, POSTS_DIRNAME), element);
     }
 
-    if (
-      element?.label === BlogsTreeDataProvider.getLabel(SOURCE_DRAFTS_DIRNAME)
-    ) {
+    if (element?.label === BlogsTreeDataProvider.getLabel(DRAFTS_DIRNAME)) {
       // If the element is the drafts directory, get its children
-      return await this.getItems(
-        join(this.sourceDir, SOURCE_DRAFTS_DIRNAME),
-        element
-      );
+      return await this.getItems(join(this.sourceDir, DRAFTS_DIRNAME), element);
     }
 
     if (
@@ -121,15 +115,12 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
     try {
       const dirents = await readdir(rootDir, { withFileTypes: true }); // Read directory entries
       const items = dirents
-        .filter(
-          (v) =>
-            v.name === SOURCE_POSTS_DIRNAME || v.name === SOURCE_DRAFTS_DIRNAME
-        )
+        .filter((v) => v.name === POSTS_DIRNAME || v.name === DRAFTS_DIRNAME)
         .map((dirent) => {
           const label = BlogsTreeDataProvider.getLabel(dirent.name); // Get label for the directory
           const uri = Uri.file(join(rootDir, dirent.name));
           const collapsibleState =
-            dirent.name !== SOURCE_POSTS_DIRNAME
+            dirent.name !== POSTS_DIRNAME
               ? TreeItemCollapsibleState.Expanded
               : TreeItemCollapsibleState.Collapsed; // Set collapsible state
           const item = new TreeItem(label, collapsibleState, undefined, uri); // Create a new TreeItem
@@ -148,8 +139,25 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
       );
       themes.contextValue = "themes";
 
+      const configUri = Uri.file(HEXO_CONFIG_PATH);
+      const config = new TreeItem(
+        BlogsTreeDataProvider.getLabel(HEXO_CONFIG_NAME),
+        TreeItemCollapsibleState.None,
+        undefined,
+        configUri
+      );
+      config.resourceUri = configUri
+      config.command = {
+        command: "vscode.open", // Command to open the file
+        title: "Open File",
+        arguments: [configUri], // Arguments for the command
+      };
+      config.contextValue = "config";
+      this.uriCache.set(configUri.toString(), config); 
+
       items.unshift(pages); // Add the pages label
       items.unshift(themes); // Add the themes label
+      items.unshift(config); // Add the config label
 
       return items; // Return the root items
     } catch (err) {
@@ -190,8 +198,8 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
         .filter((v) => {
           const pagePath = join(dir, v.name, "index.md"); // Construct the path to the index.md file
           return (
-            v.name !== SOURCE_POSTS_DIRNAME &&
-            v.name !== SOURCE_DRAFTS_DIRNAME &&
+            v.name !== POSTS_DIRNAME &&
+            v.name !== DRAFTS_DIRNAME &&
             existsSync(pagePath) // Ensure the file exists
           );
         })

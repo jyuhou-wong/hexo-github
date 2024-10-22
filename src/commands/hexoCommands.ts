@@ -23,8 +23,8 @@ import { pushToGitHubPages } from "../services/githubService";
 import type { Server } from "http";
 import {
   EXT_HEXO_STARTER_DIR,
-  SOURCE_DRAFTS_DIRNAME,
-  SOURCE_POSTS_DIRNAME,
+  DRAFTS_DIRNAME,
+  POSTS_DIRNAME,
 } from "../services/config";
 import { basename, join, sep } from "path";
 import { existsSync } from "fs";
@@ -58,14 +58,14 @@ export const addItem = async (args: any, context: vscode.ExtensionContext) => {
       }
       // 处理草稿
       else if (
-        label === BlogsTreeDataProvider.getLabel(SOURCE_DRAFTS_DIRNAME)
+        label === BlogsTreeDataProvider.getLabel(DRAFTS_DIRNAME)
       ) {
         const name = await promptForName("Please enter the draft name");
         if (!name) return; // 验证名称
         await handleCreateFile(name, "Draft", context); // 创建草稿
       }
       // 处理博客
-      else if (label === BlogsTreeDataProvider.getLabel(SOURCE_POSTS_DIRNAME)) {
+      else if (label === BlogsTreeDataProvider.getLabel(POSTS_DIRNAME)) {
         const options = ["Blog", "Sub Route"];
         const selection = await vscode.window.showQuickPick(options, {
           placeHolder: "Choose an option",
@@ -77,7 +77,7 @@ export const addItem = async (args: any, context: vscode.ExtensionContext) => {
           const path = join(
             EXT_HEXO_STARTER_DIR,
             config.source_dir,
-            SOURCE_POSTS_DIRNAME,
+            POSTS_DIRNAME,
             name
           );
           createDirectory(path); // 创建子目录
@@ -125,7 +125,7 @@ export const createNewBlogPost = async (context: vscode.ExtensionContext) => {
     const postPath = join(
       EXT_HEXO_STARTER_DIR,
       config.source_dir,
-      SOURCE_POSTS_DIRNAME,
+      POSTS_DIRNAME,
       `${path}.md`
     );
 
@@ -200,7 +200,7 @@ export const publishDraft = async (
     const postPath = join(
       EXT_HEXO_STARTER_DIR,
       config.source_dir,
-      SOURCE_POSTS_DIRNAME,
+      POSTS_DIRNAME,
       `${name}.md`
     );
 

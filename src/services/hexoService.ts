@@ -11,8 +11,8 @@ import {
 } from "../utils";
 import {
   EXT_HEXO_STARTER_DIR,
-  SOURCE_DRAFTS_DIRNAME,
-  SOURCE_POSTS_DIRNAME,
+  DRAFTS_DIRNAME,
+  POSTS_DIRNAME,
 } from "./config";
 import { join, sep } from "path";
 import { existsSync } from "fs";
@@ -137,7 +137,7 @@ export const handleCreateFile = async (
     path = join(
       EXT_HEXO_STARTER_DIR,
       config.source_dir,
-      SOURCE_DRAFTS_DIRNAME,
+      DRAFTS_DIRNAME,
       `${name}.md`
     );
     if (existsSync(path)) throw new Error(`Draft ${name} already exists`);
@@ -147,7 +147,7 @@ export const handleCreateFile = async (
     const postDir = join(
       EXT_HEXO_STARTER_DIR,
       config.source_dir,
-      SOURCE_POSTS_DIRNAME
+      POSTS_DIRNAME
     );
 
     const relativePath = parentPath

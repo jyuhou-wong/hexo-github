@@ -14,7 +14,7 @@ import {
   EXT_HEXO_STARTER_DIR,
   ZIP_FILE_PATH,
   STARTER_REPO_ZIP_URL,
-  EXT_HEXO_STARTER_DIRNAME,
+  HEXO_STARTER_DIRNAME,
   EXT_CONFIG_PATH,
   EXT_HOME_DIR,
   EXT_CONFIG_NAME,
@@ -267,7 +267,7 @@ export const pushToGitHubPages = async () => {
 
   const excludePatterns: ExcludePattern[] = [
     ".git",
-    EXT_HEXO_STARTER_DIRNAME,
+    HEXO_STARTER_DIRNAME,
     EXT_CONFIG_NAME,
   ];
 
