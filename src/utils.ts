@@ -83,6 +83,16 @@ export const handleError = (
 export const execAsync = promisify(exec);
 
 // Install NPM modules
+export const installNpmModule = async (name: string, dirPath: string) => {
+  try {
+    await execAsync(`npm install ${name}`, { cwd: dirPath });
+    vscode.window.showInformationMessage(`"${name}" installed successfully.`);
+  } catch (error) {
+    handleError(error, `Error installing "${name}"`);
+  }
+};
+
+// Install NPM modules
 export const installNpmModules = async (dirPath: string) => {
   try {
     await execAsync("npm install", { cwd: dirPath });

@@ -12,6 +12,7 @@ import {
   executeUserCommand,
   formatAddress,
   handleError,
+  installNpmModule,
   isValidPath,
   openFile,
   promptForName,
@@ -160,8 +161,8 @@ export const startHexoServer = async (
   _args: any,
   _context: vscode.ExtensionContext
 ) => {
+  vscode.window.showInformationMessage("Starting server...");
   try {
-    vscode.window.showInformationMessage("Starting server...");
     server = await hexoExec("server --draft --debug");
     const { address, port } = server.address() as any;
     const url = formatAddress(address, port);
@@ -217,6 +218,7 @@ export const deployBlog = async (
   _args: any,
   _context: vscode.ExtensionContext
 ) => {
+  vscode.window.showInformationMessage("Deploying...");
   try {
     await pushToGitHubPages();
     vscode.window.showInformationMessage(
@@ -237,19 +239,16 @@ export const localPreview = async (
   // 同时打开文件在活动编辑器
   vscode.commands.executeCommand("vscode.open", Uri.file(filePath));
 
-  if (filePath) {
-    try {
-      vscode.window.showInformationMessage("Opening...");
+  if (!filePath) return;
 
-      if (!serverStatus) await startHexoServer(args, context);
+  vscode.window.showInformationMessage("Opening...");
+  try {
+    if (!serverStatus) await startHexoServer(args, context);
 
-      const url = await getPreviewUrl(filePath);
-      open(url);
-    } catch (error) {
-      handleError(error, "Failed to preview");
-    }
-  } else {
-    vscode.window.showInformationMessage("No active editor found.");
+    const url = await getPreviewUrl(filePath);
+    open(url);
+  } catch (error) {
+    handleError(error, "Failed to preview");
   }
 };
 
@@ -264,42 +263,60 @@ export const applyTheme = async (
   // 同时打开文件在活动编辑器
   vscode.commands.executeCommand("vscode.open", Uri.file(filePath));
 
-  if (filePath) {
-    try {
-      vscode.window.showInformationMessage("Applying...");
+  if (!filePath) return;
 
-      // 应用主题
-      await hexoExec(`config theme ${themeName} --debug`);
+  vscode.window.showInformationMessage("Applying...");
+  try {
+    // 应用主题
+    await hexoExec(`config theme ${themeName} --debug`);
 
-      // 清除缓存
-      await hexoExec("clean --debug");
+    // 清除缓存
+    await hexoExec("clean --debug");
 
-      // 停止服务器
-      if (serverStatus) {
-        await stopHexoServer(args, context);
-        await startHexoServer(args, context);
-      }
-
-      vscode.window.showInformationMessage(
-        `Successfully applied the theme "${themeName}".`
-      );
-    } catch (error) {
-      handleError(error, "Failed to apply themee");
+    // 停止服务器
+    if (serverStatus) {
+      await stopHexoServer(args, context);
+      await startHexoServer(args, context);
     }
+
+    vscode.window.showInformationMessage(
+      `Successfully applied the theme "${themeName}".`
+    );
+  } catch (error) {
+    handleError(error, "Failed to apply themee");
   }
 };
 
 // add theme
 export const addTheme = async (
   _args: any,
-  _context: vscode.ExtensionContext
+  context: vscode.ExtensionContext
 ) => {
+  vscode.window.showInformationMessage("Loading...");
+
   const options = await searchNpmPackages("hexo-theme-", /^hexo-theme-[^-]+$/);
   const selection = await vscode.window.showQuickPick(options, {
     placeHolder: "Choose an option",
   });
 
-  console.log(selection);
+  if (!selection) return;
+
+  vscode.window.showInformationMessage("Installing...");
+
+  try {
+    await installNpmModule(selection, EXT_HEXO_STARTER_DIR);
+
+    const blogsProvider: BlogsTreeDataProvider | undefined =
+      context.subscriptions.find(
+        (subscription) => subscription instanceof BlogsTreeDataProvider
+      );
+
+    if (blogsProvider) {
+      blogsProvider.refresh();
+    }
+  } catch (error) {
+    handleError(error, "Failed to test");
+  }
 };
 
 // Test something
