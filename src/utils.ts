@@ -82,6 +82,25 @@ export const handleError = (
 // Promisify exec for easier async/await usage
 export const execAsync = promisify(exec);
 
+// Uninstall NPM modules
+export const uninstallNpmModule = async (name: string, dirPath: string) => {
+  try {
+    await execAsync(`npm uninstall ${name}`, { cwd: dirPath });
+    vscode.window.showInformationMessage(`"${name}" uninstalled successfully.`);
+  } catch (error) {
+    handleError(error, `Error uninstalling "${name}"`);
+  }
+};
+
+export const isModuleExisted = (
+  workspaceRoot: string,
+  moduleName: string,
+  modulesDirname: string = "node_modules"
+) => {
+  const moduleDir = join(workspaceRoot, modulesDirname, moduleName);
+  return existsSync(moduleDir);
+};
+
 // Install NPM modules
 export const installNpmModule = async (name: string, dirPath: string) => {
   try {
@@ -278,31 +297,40 @@ export const revealItem = async (
   }
 };
 
-/**
- * Deletes an item (file or directory) after user confirmation.
- *
- * @param {vscode.Uri} uri - The URI of the item to delete.
- */
-export const deleteItem = async (uri: vscode.Uri) => {
-  let path = uri.fsPath;
-  const isPage: boolean = /[\\/]+index\.md$/i.test(path);
-  const isBlog: boolean = /[^\\/]+\.md$/i.test(path);
+export const deleteItem = async (
+  args: any,
+  context: vscode.ExtensionContext
+) => {
+  let path = args.resourceUri.fsPath;
+  let { label, contextValue } = args;
 
   let prompt: string = "";
 
-  if (isPage) {
-    path = path.replace(/[\\/]+index.md$/i, "");
-    const name = basename(path);
-    prompt = `Are you sure you want to delete page "${name}"`;
-  } else if (isBlog) {
-    const name = basename(path.replace(/\.md$/i, ""));
-    prompt = `Are you sure you want to delete blog "${name}"`;
-  } else {
-    const name = basename(path);
-    const isDirectory = statSync(path).isDirectory();
-    prompt = isDirectory
-      ? `Are you sure you want to delete the directory "${name}" and all its files?`
-      : `Are you sure you want to delete "${name}"`;
+  switch (contextValue) {
+    case "theme":
+      prompt = `Are you sure you want to delete theme "${label}" and its config`;
+      break;
+      
+    case "page":
+      path = path.replace(/[\\/]+index.md$/i, "");
+      prompt = `Are you sure you want to delete page "${label}"`;
+      break;
+
+    case "draft":
+      prompt = `Are you sure you want to delete draft "${label}"`;
+      break;
+
+    case "post":
+      prompt = `Are you sure you want to delete post "${label}"`;
+      break;
+
+    case "folder":
+      prompt = `Are you sure you want to delete the directory "${label}" and all its files?`;
+      break;
+
+    default:
+      prompt = `Are you sure you want to delete "${label}"`;
+      break;
   }
 
   // Ask for user confirmation
@@ -531,12 +559,6 @@ export const getThemesInPackageJson = (
   // Read and parse the package.json file
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 
-  // Check if a module exists in the node_modules directory
-  const isModuleExisted = (moduleName: string) => {
-    const moduleDir = join(workspaceRoot, "node_modules", moduleName);
-    return existsSync(moduleDir);
-  };
-
   // Convert a module name to a TreeItem
   const toDep = (moduleName: string): TreeItem => {
     const themeDir = join(workspaceRoot, "node_modules", moduleName);
@@ -560,10 +582,10 @@ export const getThemesInPackageJson = (
 
   // Filter dependencies and devDependencies based on the regex and existence
   const themes = Object.keys(packageJson.dependencies).filter(
-    (v: string) => regex.test(v) && isModuleExisted(v)
+    (v: string) => regex.test(v) && isModuleExisted(workspaceRoot, v)
   );
   const devThemes = Object.keys(packageJson.devDependencies ?? {}).filter(
-    (v: string) => regex.test(v) && isModuleExisted(v)
+    (v: string) => regex.test(v) && isModuleExisted(workspaceRoot, v)
   );
 
   return [...new Set([...themes, ...devThemes])].map(toDep); // Return unique themes as TreeItems

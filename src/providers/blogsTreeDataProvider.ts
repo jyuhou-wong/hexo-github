@@ -255,8 +255,13 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
             title: "Open File",
             arguments: [uri], // Arguments for the command
           };
+
           if (/\.md$/i.test(basename(uri.fsPath))) {
-            item.contextValue = parent.contextValue?.replace(/s$/, "");
+            item.contextValue = "md";
+          }
+
+          if (parent.contextValue == "drafts") {
+            item.contextValue = "draft";
           }
         } else {
           item.contextValue = "folder";

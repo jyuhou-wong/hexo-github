@@ -2,7 +2,7 @@
   "name": "hexo-github",
   "displayName": "hexo-github",
   "description": "A VSCode extension for managing Hexo blogs with GitHub integration.",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "publisher": "Jyuhou Huang 黄宇豪 <jyuhou.wong@gmail.com>",
   "repository": {
     "type": "git",
@@ -130,6 +130,14 @@
         "title": "Delete"
       },
       {
+        "command": "hexo-github.deleteTheme",
+        "icon": {
+          "dark": "resources/dark/hexo-github-delete.svg",
+          "light": "resources/light/hexo-github-delete.svg"
+        },
+        "title": "Delete theme"
+      },
+      {
         "command": "hexo-github.deploy",
         "title": "Deploy blog"
       },
@@ -176,8 +184,13 @@
           "group": "inline"
         },
         {
+          "command": "hexo-github.deleteTheme",
+          "when": "view == hexo-github-blogs && viewItem == theme",
+          "group": "inline"
+        },
+        {
           "command": "hexo-github.localPreview",
-          "when": "view == hexo-github-blogs && (viewItem == page || viewItem == draft || viewItem == post)",
+          "when": "view == hexo-github-blogs && (viewItem == page || viewItem == md)",
           "group": "inline"
         },
         {
@@ -192,7 +205,7 @@
         },
         {
           "command": "hexo-github.deleteItem",
-          "when": "view == hexo-github-blogs && !(viewItem == config || viewItem == themes || viewItem == pages || viewItem == drafts || viewItem == posts)",
+          "when": "view == hexo-github-blogs && !(viewItem == config || viewItem == themes || viewItem == theme || viewItem == pages || viewItem == drafts || viewItem == posts)",
           "group": "inline"
         }
       ],

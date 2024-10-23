@@ -9,10 +9,12 @@ import {
 import open from "open";
 import {
   createDirectory,
+  execAsync,
   executeUserCommand,
   formatAddress,
   handleError,
   installNpmModule,
+  isModuleExisted,
   isValidPath,
   openFile,
   promptForName,
@@ -27,7 +29,7 @@ import {
   POSTS_DIRNAME,
 } from "../services/config";
 import { basename, join, sep } from "path";
-import { existsSync } from "fs";
+import { existsSync, rmSync } from "fs";
 import { BlogsTreeDataProvider } from "../providers/blogsTreeDataProvider";
 
 let server: Server;
@@ -57,9 +59,7 @@ export const addItem = async (args: any, context: vscode.ExtensionContext) => {
         await handleCreateFile(name, "Page", context); // 创建页面
       }
       // 处理草稿
-      else if (
-        label === BlogsTreeDataProvider.getLabel(DRAFTS_DIRNAME)
-      ) {
+      else if (label === BlogsTreeDataProvider.getLabel(DRAFTS_DIRNAME)) {
         const name = await promptForName("Please enter the draft name");
         if (!name) return; // 验证名称
         await handleCreateFile(name, "Draft", context); // 创建草稿
@@ -317,6 +317,83 @@ export const addTheme = async (
   } catch (error) {
     handleError(error, "Failed to test");
   }
+};
+
+export const deleteTheme = async (
+  args: any,
+  context: vscode.ExtensionContext
+): Promise<boolean> => {
+  const { label: name } = args;
+
+  const themePath = join(EXT_HEXO_STARTER_DIR, "themes", name);
+  const themeConfigPath = join(EXT_HEXO_STARTER_DIR, `_config.${name}.yml`);
+
+  // Ask for user confirmation
+  const confirmation = await vscode.window.showWarningMessage(
+    `Delete "${name}" theme?`,
+    { modal: true },
+    "Delete"
+  );
+
+  if (confirmation !== "Delete") return false;
+
+  // Return an empty array if the themes directory does not exist
+  if (existsSync(themePath)) {
+    try {
+      rmSync(themePath, { recursive: true, force: true });
+      vscode.window.showInformationMessage(
+        `Successfully deleted "${name}" Theme.`
+      );
+    } catch (error) {
+      handleError(error, `Error deleting "${name}" Theme.`);
+    }
+  }
+
+  if (isModuleExisted(EXT_HEXO_STARTER_DIR, `hexo-theme-${name}`)) {
+    try {
+      await execAsync(`npm uninstall hexo-theme-${name}`, {
+        cwd: EXT_HEXO_STARTER_DIR,
+      });
+      vscode.window.showInformationMessage(
+        `"hexo-theme-${name}" npm module uninstalled successfully.`
+      );
+    } catch (error) {
+      handleError(
+        error,
+        `Error uninstalling "hexo-theme-${name}" npm module .`
+      );
+    }
+  }
+
+  if (existsSync(themeConfigPath)) {
+    const confirmation = await vscode.window.showWarningMessage(
+      `Keep "${name}" Theme config?`,
+      { modal: true },
+      "Keep",
+      "Delete"
+    );
+
+    if (confirmation === "Delete") {
+      try {
+        rmSync(themeConfigPath, { recursive: true, force: true });
+        vscode.window.showInformationMessage(
+          `Successfully deleted "${name}" Theme config.`
+        );
+      } catch (error) {
+        handleError(error, `Error deleting "${name}" Theme config.`);
+      }
+    }
+  }
+
+  const blogsProvider: BlogsTreeDataProvider | undefined =
+    context.subscriptions.find(
+      (subscription) => subscription instanceof BlogsTreeDataProvider
+    );
+
+  if (blogsProvider) {
+    blogsProvider.refresh();
+  }
+  return true; // Return the array of TreeItem representing themes
 };
 
 // Test something
