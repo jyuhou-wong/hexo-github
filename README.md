@@ -1,5 +1,11 @@
 # Hexo-GitHub VSCode Plugin
 
+[![License](https://img.shields.io/github/license/jyuhou-wong/hexo-github.svg)](https://github.com/jyuhou-wong/hexo-github/blob/master/LICENSE)
+[![Build Status](https://github.com/jyuhou-wong/hexo-github/workflows/Release/badge.svg)](https://github.com/jyuhou-wong/hexo-github/actions)
+[![Github Downloads](https://img.shields.io/github/downloads/jyuhou-wong/hexo-github/total.svg)](http://gra.caldis.me/?url=https://github.com/jyuhou-wong/hexo-github)
+[![Hits](https://hits.b3log.org/jyuhou-wong/hexo-github.svg)](https://hits.b3log.org/jyuhou-wong/hexo-github.svg)
+[![Github Release Version](https://img.shields.io/github/v/release/jyuhou-wong/hexo-github?color=green&include_prereleases)](https://github.com/jyuhou-wong/hexo-github/releases/latest)
+
 Hexo-GitHub 是一个 VSCode 插件，旨在简化 Hexo 博客的管理与 GitHub 集成。用户可以通过该插件轻松地创建、更新和部署他们的 Hexo 博客。
 
 ## Demo
@@ -17,6 +23,8 @@ Hexo-GitHub 是一个 VSCode 插件，旨在简化 Hexo 博客的管理与 GitHu
 - **本地预览**: 在浏览器中打开本地博客的预览。
 - **部署到 GitHub Pages**: 将博客部署到 GitHub Pages，使其在线可访问。
 - **管理博客文件**: 在 VSCode 中管理博客的文件结构。
+- **主题动态切换**: 支持 Hexo 主题的动态切换和安装。
+- **配置支持**: 在自定义视图中显示和修改配置。
 
 ## 安装
 
@@ -53,7 +61,7 @@ Hexo-GitHub 是一个 VSCode 插件，旨在简化 Hexo 博客的管理与 GitHu
 
 ### 自定义视图
 
-插件提供了一个自定义视图，用于管理博客文件，如下图所示：
+插件提供了一个自定义视图，用于管理博客文件和配置，如下图所示：
 
 ![Hexo GitHub: Blogs](resources/treeview.png)
 
@@ -69,6 +77,8 @@ Hexo-GitHub 是一个 VSCode 插件，旨在简化 Hexo 博客的管理与 GitHu
 - **Add**: 添加新项目。
 - **Publish**: 发布草稿。
 - **Delete**: 删除项目。
+- **主题切换**: 动态切换 Hexo 主题。
+- **配置管理**: 查看和编辑 Hexo 配置。
 
 ### 通过上下文菜单
 
@@ -90,7 +100,8 @@ Hexo-GitHub 是一个 VSCode 插件，旨在简化 Hexo 博客的管理与 GitHu
 3. **博客创建与管理**: 通过 `createNewBlogPost` 和 `addItem` 函数，用户可以创建新的博客文章或页面。
 4. **Hexo 服务器管理**: 使用 `startHexoServer` 和 `stopHexoServer` 函数启动和停止本地 Hexo 服务器，支持草稿预览。
 5. **预览和部署**: 使用 `localPreview` 函数在本地预览博客，通过 `pushToGitHubPages` 函数将博客部署到 GitHub Pages。
-6. **树视图管理**: `BlogsTreeDataProvider` 类实现了博客文章的树视图展示，支持文件系统的变化监控。
+6. **主题和配置管理**: 支持在自定义视图中动态切换主题和显示配置。
+7. **树视图管理**: `BlogsTreeDataProvider` 类实现了博客文章的树视图展示，支持文件系统的变化监控。
 
 ## 依赖关系
 
