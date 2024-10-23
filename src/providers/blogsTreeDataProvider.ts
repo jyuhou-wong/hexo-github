@@ -124,6 +124,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
               ? TreeItemCollapsibleState.Expanded
               : TreeItemCollapsibleState.Collapsed; // Set collapsible state
           const item = new TreeItem(label, collapsibleState, undefined, uri); // Create a new TreeItem
+          item.contextValue = dirent.name.replace(/^_/, "");
           return item;
         });
 
@@ -146,14 +147,14 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
         undefined,
         configUri
       );
-      config.resourceUri = configUri
+      config.resourceUri = configUri;
       config.command = {
         command: "vscode.open", // Command to open the file
         title: "Open File",
         arguments: [configUri], // Arguments for the command
       };
       config.contextValue = "config";
-      this.uriCache.set(configUri.toString(), config); 
+      this.uriCache.set(configUri.toString(), config);
 
       items.unshift(pages); // Add the pages label
       items.unshift(themes); // Add the themes label
@@ -254,9 +255,12 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
             title: "Open File",
             arguments: [uri], // Arguments for the command
           };
+          if (/\.md$/i.test(basename(uri.fsPath))) {
+            item.contextValue = parent.contextValue?.replace(/s$/, "");
+          }
+        } else {
+          item.contextValue = "folder";
         }
-
-        item.contextValue = fullPath;
 
         this.uriCache.set(uri.toString(), item); // Cache the TreeItem
         return item; // Return the created item

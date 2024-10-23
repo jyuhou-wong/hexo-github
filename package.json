@@ -177,22 +177,22 @@
         },
         {
           "command": "hexo-github.localPreview",
-          "when": "view == hexo-github-blogs && (viewItem == page || viewItem =~ /\\.md$/i)",
+          "when": "view == hexo-github-blogs && (viewItem == page || viewItem == draft || viewItem == post)",
           "group": "inline"
         },
         {
           "command": "hexo-github.addItem",
-          "when": "view == hexo-github-blogs && viewItem != themes && viewItem != theme && viewItem != page && !(viewItem =~ /\\.[^/\\\\]+$/i)",
+          "when": "view == hexo-github-blogs && (viewItem == pages || viewItem == drafts || viewItem == posts || viewItem == folder)",
           "group": "inline"
         },
         {
           "command": "hexo-github.publish",
-          "when": "view == hexo-github-blogs && viewItem =~ /_drafts[/\\\\]+[^/\\\\]+\\.md$/i",
+          "when": "view == hexo-github-blogs && (viewItem == draft)",
           "group": "inline"
         },
         {
           "command": "hexo-github.deleteItem",
-          "when": "view == hexo-github-blogs && viewItem != themes && viewItem",
+          "when": "view == hexo-github-blogs && !(viewItem == config || viewItem == themes || viewItem == pages || viewItem == drafts || viewItem == posts)",
           "group": "inline"
         }
       ],
