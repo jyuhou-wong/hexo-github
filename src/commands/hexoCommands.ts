@@ -71,6 +71,8 @@ export const addItem = async (args: any, context: vscode.ExtensionContext) => {
           placeHolder: "Choose an option",
         });
 
+        if (!selection) return;
+
         if (selection === "Sub Route") {
           const name = await promptForName("Please enter the sub route name");
           if (!name) return; // 验证名称
@@ -93,6 +95,8 @@ export const addItem = async (args: any, context: vscode.ExtensionContext) => {
       const selection = await vscode.window.showQuickPick(options, {
         placeHolder: "Choose an option",
       });
+
+      if (!selection) return;
 
       if (selection === "Sub Route") {
         const name = await promptForName("Please enter the sub route name");
@@ -304,7 +308,7 @@ export const addTheme = async (
   vscode.window.showInformationMessage("Installing...");
 
   try {
-    await installNpmModule(selection, EXT_HEXO_STARTER_DIR);
+    await installNpmModule(EXT_HEXO_STARTER_DIR, selection);
 
     const blogsProvider: BlogsTreeDataProvider | undefined =
       context.subscriptions.find(

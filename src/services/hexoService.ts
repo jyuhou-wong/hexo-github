@@ -2,18 +2,13 @@ import * as vscode from "vscode";
 import Hexo from "hexo";
 import {
   arePathsEqual,
-  checkNodeModulesExist,
   getArgs,
   handleError,
-  installNpmModules,
+  installMissingDependencies,
   openFile,
   revealItem,
 } from "../utils";
-import {
-  EXT_HEXO_STARTER_DIR,
-  DRAFTS_DIRNAME,
-  POSTS_DIRNAME,
-} from "./config";
+import { EXT_HEXO_STARTER_DIR, DRAFTS_DIRNAME, POSTS_DIRNAME } from "./config";
 import { join, sep } from "path";
 import { existsSync } from "fs";
 import { Uri } from "vscode";
@@ -32,6 +27,9 @@ interface Args {
 
 // Initialize Hexo
 export const initializeHexo = async (args: Args = {}) => {
+  // 初始化之前安装丢失的插件
+  await installMissingDependencies(EXT_HEXO_STARTER_DIR);
+
   const hexo = new Hexo(EXT_HEXO_STARTER_DIR, args);
   await hexo.init();
   return hexo;
@@ -51,13 +49,6 @@ const getCommand = (hexo: Hexo, args: any) => {
 // Execute Hexo command
 export const hexoExec = async (cmd: string) => {
   if (!cmd) throw new Error("Command cannot be empty!");
-
-  if (!(await checkNodeModulesExist(EXT_HEXO_STARTER_DIR))) {
-    vscode.window.showInformationMessage(
-      `Modules are not installed in ${EXT_HEXO_STARTER_DIR}. Installing now...`
-    );
-    await installNpmModules(EXT_HEXO_STARTER_DIR);
-  }
 
   const args = getArgs(cmd);
 

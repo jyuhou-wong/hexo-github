@@ -13,7 +13,7 @@ import {
   statSync,
   writeFileSync,
 } from "fs";
-import { readdir } from "fs/promises";
+import { readdir, readFile } from "fs/promises";
 import { basename, join } from "path";
 import { promisify } from "util";
 import { exec } from "child_process";
@@ -23,31 +23,6 @@ import {
   TreeItem,
 } from "./providers/blogsTreeDataProvider";
 import axios from "axios";
-
-/**
- * Checks if the node_modules directory exists in the given path.
- * @param dirPath - The path to check.
- * @returns A promise that resolves to true if node_modules exists, false otherwise.
- */
-export const checkNodeModulesExist = async (
-  dirPath: string
-): Promise<boolean> => {
-  return new Promise((resolve) => {
-    // Ensure the provided path is a directory
-    stat(dirPath, (err, stats) => {
-      if (err || !stats.isDirectory()) {
-        resolve(false);
-        return;
-      }
-
-      // Check for the existence of the node_modules directory
-      const nodeModulesPath = join(dirPath, "node_modules");
-      access(nodeModulesPath, constants.F_OK, (err) => {
-        resolve(!err); // If no error, node_modules exists
-      });
-    });
-  });
-};
 
 /**
  * Checks if two paths are equal.
@@ -83,7 +58,7 @@ export const handleError = (
 export const execAsync = promisify(exec);
 
 // Uninstall NPM modules
-export const uninstallNpmModule = async (name: string, dirPath: string) => {
+export const uninstallNpmModule = async (dirPath: string, name: string) => {
   try {
     await execAsync(`npm uninstall ${name}`, { cwd: dirPath });
     vscode.window.showInformationMessage(`"${name}" uninstalled successfully.`);
@@ -102,12 +77,14 @@ export const isModuleExisted = (
 };
 
 // Install NPM modules
-export const installNpmModule = async (name: string, dirPath: string) => {
+export const installNpmModule = async (dirPath: string, name: string) => {
   try {
     await execAsync(`npm install ${name}`, { cwd: dirPath });
     vscode.window.showInformationMessage(`"${name}" installed successfully.`);
+    return true;
   } catch (error) {
     handleError(error, `Error installing "${name}"`);
+    return false;
   }
 };
 
@@ -116,8 +93,41 @@ export const installNpmModules = async (dirPath: string) => {
   try {
     await execAsync("npm install", { cwd: dirPath });
     vscode.window.showInformationMessage("NPM modules installed successfully.");
+    return true;
   } catch (error) {
     handleError(error, "Error installing NPM modules");
+    return false;
+  }
+};
+
+/**
+ * Installs missing dependencies from the specified directory's package.json.
+ * @param dirPath - The directory path containing the package.json file.
+ */
+export const installMissingDependencies = async (dirPath: string) => {
+  const packageJsonPath = join(dirPath, "package.json");
+
+  // Check if package.json exists
+  if (!existsSync(packageJsonPath)) {
+    vscode.window.showWarningMessage(
+      "package.json not found in the specified directory."
+    );
+    return;
+  }
+
+  // Read and parse package.json
+  const packageJson = JSON.parse(await readFile(packageJsonPath, "utf-8"));
+
+  const { dependencies = {}, devDependencies = {} } = packageJson;
+
+  // Combine dependencies and devDependencies into a single array
+  const allDependencies = { ...dependencies, ...devDependencies };
+
+  // Check each dependency and install if missing
+  for (const packageName of Object.keys(allDependencies)) {
+    const installed = isModuleExisted(dirPath, packageName);
+    if (installed) continue;
+    await installNpmModule(dirPath, packageName); // Install the missing package
   }
 };
 
@@ -310,7 +320,7 @@ export const deleteItem = async (
     case "theme":
       prompt = `Are you sure you want to delete theme "${label}" and its config`;
       break;
-      
+
     case "page":
       path = path.replace(/[\\/]+index.md$/i, "");
       prompt = `Are you sure you want to delete page "${label}"`;
