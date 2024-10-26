@@ -403,7 +403,6 @@ export const deleteTheme = async (
 // Test something
 export const testSomething = async () => {
   try {
-    // await searchNpmPackages("hexo-theme-", /^hexo-theme-[^-]+$/);
     vscode.window.showInformationMessage("Test completed successfully");
   } catch (error) {
     handleError(error, "Failed to test");

@@ -11,11 +11,7 @@ import { executeWithFeedback } from "../utils";
 
 // Log in to GitHub
 export const loginToGitHub = async (context: vscode.ExtensionContext) => {
-  await executeWithFeedback(
-    startOAuthLogin,
-    "Successfully logged in to GitHub!",
-    "Login failed"
-  );
+  await startOAuthLogin();
 };
 
 // Pull Hexo repository

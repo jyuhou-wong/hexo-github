@@ -1,15 +1,12 @@
 import { TreeItemCollapsibleState, Uri } from "vscode";
 import * as vscode from "vscode";
 import {
-  access,
-  constants,
   copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   rmSync,
-  stat,
   statSync,
   writeFileSync,
 } from "fs";
