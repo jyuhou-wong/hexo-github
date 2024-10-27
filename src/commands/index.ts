@@ -8,12 +8,7 @@ import {
   pushHexoRepository,
 } from "./githubCommands";
 import {
-  executeHexoCommand,
-  createNewBlogPost,
-  startHexoServer,
-  testSomething,
   localPreview,
-  stopHexoServer,
   deployBlog,
   addItem,
   publishDraft,
@@ -23,7 +18,8 @@ import {
   deleteSite,
   addSite,
 } from "./hexoCommands";
-import { deleteItem } from "../utils";
+import { deleteItem, refreshBlogsProvider } from "../utils";
+import { TreeItem } from "../providers/blogsTreeDataProvider";
 
 // Register all commands
 const commands = [
@@ -34,10 +30,6 @@ const commands = [
   { command: "hexo-github.openSourceGit", callback: openSourceRepository },
   { command: "hexo-github.openPageGit", callback: openPageRepository },
   { command: "hexo-github.openPage", callback: openPage },
-  { command: "hexo-github.cmd", callback: executeHexoCommand },
-  { command: "hexo-github.new", callback: createNewBlogPost },
-  { command: "hexo-github.startServer", callback: startHexoServer },
-  { command: "hexo-github.stopServer", callback: stopHexoServer },
   { command: "hexo-github.localPreview", callback: localPreview },
   { command: "hexo-github.publish", callback: publishDraft },
   { command: "hexo-github.addItem", callback: addItem },
@@ -47,14 +39,17 @@ const commands = [
   { command: "hexo-github.deleteTheme", callback: deleteTheme },
   { command: "hexo-github.applyTheme", callback: applyTheme },
   { command: "hexo-github.addTheme", callback: addTheme },
-  { command: "hexo-github.test", callback: testSomething },
+  {
+    command: "hexo-github.refreshTreeview",
+    callback: (element: TreeItem, context: vscode.ExtensionContext) => refreshBlogsProvider(context),
+  },
 ];
 
 export const registerCommands = (context: vscode.ExtensionContext) => {
   commands.forEach(({ command, callback }) => {
     context.subscriptions.push(
-      vscode.commands.registerCommand(command, (args) =>
-        callback(args, context)
+      vscode.commands.registerCommand(command, (element) =>
+        callback(element, context)
       )
     );
   });

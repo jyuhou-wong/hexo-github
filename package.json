@@ -19,6 +19,14 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "views": {
+      "hexo-github-explorer": [
+        {
+          "id": "hexo-github-blogs",
+          "name": "Blogs"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -28,15 +36,18 @@
         }
       ]
     },
-    "views": {
-      "hexo-github-explorer": [
-        {
-          "id": "hexo-github-blogs",
-          "name": "Blogs"
-        }
-      ]
-    },
+    "viewsWelcome": [
+      {
+        "view": "hexo-github-blogs",
+        "contents": "Not logged in, please login github first.\n[Login to Github](command:hexo-github.loginToGitHub)",
+        "when": "!hexo-github.isLogin"
+      }
+    ],
     "commands": [
+      {
+        "command": "hexo-github.refreshTreeview",
+        "title": "Refresh treeview"
+      },
       {
         "command": "hexo-github.openSourceGit",
         "icon": {
@@ -84,18 +95,6 @@
       {
         "command": "hexo-github.cmd",
         "title": "Hexo cmd"
-      },
-      {
-        "command": "hexo-github.startServer",
-        "title": "Start server"
-      },
-      {
-        "command": "hexo-github.stopServer",
-        "title": "Stop server"
-      },
-      {
-        "command": "hexo-github.new",
-        "title": "New blog"
       },
       {
         "command": "hexo-github.localPreview",
@@ -163,6 +162,10 @@
       },
       {
         "command": "hexo-github.deploy",
+        "icon": {
+          "dark": "resources/dark/hexo-github-deploy.svg",
+          "light": "resources/light/hexo-github-deploy.svg"
+        },
         "title": "Deploy blog"
       },
       {
@@ -172,36 +175,37 @@
           "light": "resources/light/hexo-github-apply.svg"
         },
         "title": "Apply theme"
-      },
-      {
-        "command": "hexo-github.test",
-        "title": "Test"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "hexo-github.pullHexo",
-          "when": "view == hexo-github-blogs",
+          "when": "view == hexo-github-blogs && hexo-github.isLogin",
           "group": "navigation"
         },
         {
           "command": "hexo-github.pushHexo",
-          "when": "view == hexo-github-blogs",
+          "when": "view == hexo-github-blogs && hexo-github.isLogin",
           "group": "navigation"
         },
         {
           "command": "hexo-github.addSite",
-          "when": "view == hexo-github-blogs",
+          "when": "view == hexo-github-blogs && hexo-github.isLogin",
           "group": "navigation"
         },
         {
           "command": "hexo-github.openSourceGit",
-          "when": "view == hexo-github-blogs",
+          "when": "view == hexo-github-blogs && hexo-github.isLogin",
           "group": "navigation"
         }
       ],
       "view/item/context": [
+        {
+          "command": "hexo-github.deploy",
+          "when": "view == hexo-github-blogs && viewItem == site",
+          "group": "inline"
+        },
         {
           "command": "hexo-github.openPageGit",
           "when": "view == hexo-github-blogs && viewItem == site",
@@ -265,10 +269,6 @@
         },
         {
           "command": "hexo-github.deploy",
-          "group": "hexo-github"
-        },
-        {
-          "command": "hexo-github.test",
           "group": "hexo-github"
         }
       ]

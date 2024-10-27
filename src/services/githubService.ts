@@ -20,6 +20,8 @@ import { hexoExec, initializeHexo } from "./hexoService";
 import { handleError, installNpmModules, refreshBlogsProvider } from "../utils";
 import { TreeItem } from "../providers/blogsTreeDataProvider";
 
+export let accessToken: string | null = "";
+
 // 确保配置目录存在
 if (!fs.existsSync(EXT_CONFIG_PATH)) {
   fs.mkdirSync(EXT_CONFIG_PATH, { recursive: true });
@@ -55,6 +57,15 @@ export const loadAccessToken = (): string | null => {
       handleError(error, "Error parsing config file");
     }
   }
+
+  if (!accessToken) {
+    vscode.commands.executeCommand("setContext", "hexo-github.isLogin", true);
+    vscode.commands.executeCommand("hexo-github.refreshTreeview").then(() => {
+      vscode.commands.executeCommand("hexo-github.pullHexo");
+    });
+    accessToken = config.accessToken;
+  }
+
   return config.accessToken;
 };
 
@@ -251,34 +262,15 @@ export const deleteRemoteRepo = async (
   }
 };
 
-// 处理 Git 操作
-const handleGitOperation = async (
-  git: SimpleGit,
-  operation: "add" | "commit" | "push",
-  message?: string
-): Promise<void> => {
-  switch (operation) {
-    case "add":
-      await git.add(".");
-      break;
-    case "commit":
-      if (message) await git.commit(message);
-      break;
-    case "push":
-      await git.push("origin", "main");
-      break;
-  }
-};
-
 // 推送到 Hexo 仓库
 export const pushHexo = async (
   context: vscode.ExtensionContext
 ): Promise<void> => {
   await pullHexo(context);
   const git = simpleGit(EXT_HOME_DIR);
-  await handleGitOperation(git, "add");
-  await handleGitOperation(git, "commit", "feat: update hexo database");
-  await handleGitOperation(git, "push");
+  await git.add(".");
+  await git.commit("feat: update hexo database");
+  await git.push("origin", "main");
   vscode.window.showInformationMessage(
     "Pushed to hexo-github-db successfully."
   );
@@ -312,7 +304,10 @@ const handleExistingRepo = async (
   localRepoExists: boolean
 ): Promise<void> => {
   if (localRepoExists) {
-    await git.pull("origin", "main");
+    await git.pull("origin", "main", [
+      "--allow-unrelated-histories",
+      "--strategy-option=theirs",
+    ]);
     vscode.window.showInformationMessage(
       "Pulled latest changes from hexo-github-db successfully."
     );
@@ -327,12 +322,16 @@ const initializeLocalRepo = async (git: SimpleGit): Promise<void> => {
     "Local repository does not exist. Pulling..."
   );
   await git.init();
+  await checkoutBranch(git);
   await git.add(".");
+  await git.commit("feat: update hexo database");
   const loginName = await getLoginName();
   const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${loginName}/hexo-github-db.git`;
   await git.addRemote("origin", remoteUrl);
-  await checkoutBranch(git);
-  await git.pull("origin", "main");
+  await git.pull("origin", "main", [
+    "--allow-unrelated-histories",
+    "--strategy-option=theirs",
+  ]);
 };
 
 // 处理不存在的仓库
@@ -351,7 +350,7 @@ const handleNonExistingRepo = async (
       "Local repository exists but remote hexo-github-db does not exist. Creating..."
     );
     await createRemoteRepo(octokit, "hexo-github-db");
-    await handleGitOperation(git, "push");
+    await git.push("origin", "main");
   }
 };
 
@@ -378,7 +377,7 @@ const createLocalRepo = async (octokit: any, git: SimpleGit): Promise<void> => {
   await checkoutBranch(git);
   await createUserPageRepoIfNeeded(loginName);
   await createRemoteRepo(octokit, "hexo-github-db");
-  await handleGitOperation(git, "push");
+  await git.push("origin", "main");
 };
 
 // 检查并创建用户页面仓库
@@ -439,7 +438,11 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
       await git.checkout("main");
     }
 
-    if (repoExists) await git.pull("origin", "main");
+    if (repoExists)
+      await git.pull("origin", "main", [
+        "--allow-unrelated-histories",
+        "--strategy-option=ours",
+      ]);
   }
 
   await hexoExec(siteDir, "generate");
@@ -463,16 +466,18 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
   await git.commit("Deploy to GitHub Pages");
   await git.push("origin", "main", { "--force": null });
 
-  // 启用 GitHub Pages
-  await enableGitHubPages({
-    octokit,
-    owner: loginName,
-    repo: siteName,
-    branch: "main",
-    path: "/",
-  });
+  if (!repoExists) {
+    // 启用 GitHub Pages
+    await enableGitHubPages({
+      octokit,
+      owner: loginName,
+      repo: siteName,
+      branch: "main",
+      path: "/",
+    });
 
-  await enableHttps({ octokit, owner: loginName, repo: siteName });
+    await enableHttps({ octokit, owner: loginName, repo: siteName });
+  }
 
   vscode.window.showInformationMessage("Pushed to GitHub Pages successfully.");
 };

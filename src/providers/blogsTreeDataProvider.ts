@@ -21,6 +21,7 @@ import { getHexoConfig } from "../services/hexoService";
 import { existsSync, statSync } from "fs";
 import { FSWatcher, watch } from "chokidar";
 import { getThemesInPackageJson, getThemesInThemesDir } from "../utils";
+import { accessToken } from "../services/githubService";
 
 // Define the TreeItem class which represents each item in the tree
 export class TreeItem extends vscode.TreeItem {
@@ -72,6 +73,10 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
 
   // Get the children of a specified TreeItem
   async getChildren(element?: TreeItem): Promise<TreeItem[]> {
+    if (!accessToken) {
+      return [];
+    }
+
     if (!this.sourceDirs.size) {
       await this.setSourceDirs(EXT_HOME_DIR); // Ensure source directory is set
     }

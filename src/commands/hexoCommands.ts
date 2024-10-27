@@ -37,13 +37,12 @@ import {
   POSTS_DIRNAME,
   EXT_HOME_DIR,
 } from "../services/config";
-import { basename, join, sep } from "path";
+import { basename, join } from "path";
 import { existsSync, rmSync } from "fs";
 import {
   BlogsTreeDataProvider,
   TreeItem,
 } from "../providers/blogsTreeDataProvider";
-import simpleGit from "simple-git";
 
 interface ServerObj {
   server: Server;
@@ -183,11 +182,11 @@ export const createNewBlogPost = async (
 
 // Function to update the command title based on server status
 const updateServerStatus = (siteName: string, status: boolean): void => {
-  vscode.commands.executeCommand(
-    "setContext",
-    "hexo-github.serversStatus.get(siteName)",
-    status
-  );
+  // vscode.commands.executeCommand(
+  //   "setContext",
+  //   "hexo-github.serversStatus.get(siteName)",
+  //   status
+  // );
   serversStatus.set(siteName, status);
 };
 
