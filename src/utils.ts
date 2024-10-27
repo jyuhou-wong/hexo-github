@@ -20,6 +20,7 @@ import {
   TreeItem,
 } from "./providers/blogsTreeDataProvider";
 import axios from "axios";
+import * as net from "net";
 
 /**
  * Checks if two paths are equal.
@@ -49,6 +50,7 @@ export const handleError = (
   }
 
   vscode.window.showErrorMessage(errorMessage);
+  throw new Error(errorMessage);
 };
 
 // Promisify exec for easier async/await usage
@@ -314,6 +316,10 @@ export const deleteItem = async (
   let prompt: string = "";
 
   switch (contextValue) {
+    case "site":
+      prompt = `Are you sure you want to delete site "${label}"`;
+      break;
+
     case "theme":
       prompt = `Are you sure you want to delete theme "${label}" and its config`;
       break;
@@ -510,6 +516,7 @@ export const searchNpmPackages = async (
  * @returns A promise that resolves to an array of TreeItem representing the themes.
  */
 export const getThemesInThemesDir = async (
+  siteName: string,
   workspaceRoot: string,
   parent: TreeItem,
   themeDir: string = "themes"
@@ -529,6 +536,7 @@ export const getThemesInThemesDir = async (
         name
       );
       const item = new TreeItem(
+        siteName,
         name,
         TreeItemCollapsibleState.None,
         parent,
@@ -554,6 +562,7 @@ export const getThemesInThemesDir = async (
  * @returns An array of TreeItem representing the themes found in package.json.
  */
 export const getThemesInPackageJson = (
+  siteName: string,
   workspaceRoot: string,
   parent: TreeItem,
   regex: RegExp = /^hexo-theme-[^-]+$/i
@@ -572,6 +581,7 @@ export const getThemesInPackageJson = (
     const themeName = moduleName.replace(/^hexo-theme-/, "");
     const uri = getThemeConfig(workspaceRoot, Uri.file(themeDir), themeName);
     const item = new TreeItem(
+      siteName,
       themeName,
       vscode.TreeItemCollapsibleState.None,
       parent,
@@ -618,4 +628,26 @@ export const getThemeConfig = (
   copyFileSync(configPath, destPath);
 
   return Uri.file(destPath);
+};
+
+/**
+ * Generates a random available port.
+ * @returns A promise that resolves to a random available port number.
+ */
+export const getRandomAvailablePort = async (): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+
+    // Attempt to listen on a random port
+    server.listen(0, () => {
+      const port = (server.address() as net.AddressInfo).port;
+      server.close(() => resolve(port)); // Resolve with the available port
+    });
+
+    // Handle errors (e.g., if the port is occupied)
+    server.on("error", () => {
+      server.close();
+      reject(new Error("Could not find an available port."));
+    });
+  });
 };

@@ -22,6 +22,7 @@ import {
 import { hexoExec, initializeHexo } from "./hexoService";
 import { copyFiles, installNpmModules } from "../utils";
 import type { ExcludePattern } from "../utils";
+import { TreeItem } from "../providers/blogsTreeDataProvider";
 
 // 确保配置目录存在
 if (!fs.existsSync(EXT_CONFIG_PATH)) {
@@ -130,9 +131,9 @@ export const getLoginName = async (): Promise<string> => {
 };
 
 // 检查仓库是否存在
-const checkRepoExists = async (
-  repoName: string,
-  octokit: any
+export const checkRepoExists = async (
+  octokit: any,
+  repoName: string
 ): Promise<boolean> => {
   try {
     const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
@@ -193,14 +194,30 @@ const initializeLocalRepo = async (git: SimpleGit): Promise<void> => {
 
 // 创建远程仓库
 const createRemoteRepo = async (
-  repoName: string,
-  octokit: any
+  octokit: any,
+  repoName: string
 ): Promise<void> => {
   const response = await octokit.rest.repos.createForAuthenticatedUser({
     name: repoName,
     private: true,
   });
   console.log(`Created repository: ${response.data.full_name}`);
+};
+
+export const deleteRemoteRepo = async (
+  octokit: any,
+  owner: string,
+  repoName: string
+): Promise<void> => {
+  try {
+    const response = await octokit.rest.repos.delete({
+      owner,
+      repo: repoName,
+    });
+    console.log(`Deleted repository: ${repoName}`);
+  } catch (error: any) {
+    console.error("Error deleting repository:", error.message);
+  }
 };
 
 // 定义 `enableGitHubPages` 方法
@@ -282,7 +299,7 @@ const checkAndInitializeLocalRepo = async (
 // 推送到 Hexo 仓库
 export const pushHexo = async (): Promise<void> => {
   const octokit = await getOctokitInstance();
-  const repoExists = await checkRepoExists("hexo-github-db", octokit);
+  const repoExists = await checkRepoExists(octokit, "hexo-github-db");
   const git = simpleGit(EXT_HOME_DIR);
 
   // 检查本地仓库
@@ -290,7 +307,7 @@ export const pushHexo = async (): Promise<void> => {
 
   if (!repoExists) {
     await initializeLocalRepo(git); // 初始化并创建远程仓库
-    await createRemoteRepo("hexo-github-db", octokit);
+    await createRemoteRepo(octokit, "hexo-github-db");
   }
 
   await handlePush(git);
@@ -299,7 +316,7 @@ export const pushHexo = async (): Promise<void> => {
 // 拉取 Hexo 仓库
 export const pullHexo = async (): Promise<void> => {
   const octokit = await getOctokitInstance();
-  const repoExists = await checkRepoExists("hexo-github-db", octokit);
+  const repoExists = await checkRepoExists(octokit, "hexo-github-db");
   const git = simpleGit(EXT_HOME_DIR);
   const localRepoExists = fs.existsSync(path.join(EXT_HOME_DIR, ".git"));
 
@@ -333,7 +350,7 @@ export const pullHexo = async (): Promise<void> => {
 };
 
 // Push to GitHub Pages
-export const pushToGitHubPages = async (): Promise<void> => {
+export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
   const octokit = await getOctokitInstance();
   const hexo = await initializeHexo();
   const localPublicDir = path.join(
@@ -341,10 +358,12 @@ export const pushToGitHubPages = async (): Promise<void> => {
     hexo.config.public_dir
   );
 
+  const { siteDir } = element;
+
   const loginName = await getLoginName();
 
   const userPageRepoName = `${loginName}.github.io`;
-  const repoExists = await checkRepoExists(userPageRepoName, octokit);
+  const repoExists = await checkRepoExists(octokit, userPageRepoName);
 
   const localPublicDirExists = fs.existsSync(localPublicDir);
   if (!localPublicDirExists) fs.mkdirSync(localPublicDir, { recursive: true });
@@ -367,7 +386,7 @@ export const pushToGitHubPages = async (): Promise<void> => {
     if (repoExists) await git.pull("origin", "main");
   }
 
-  await hexoExec("generate");
+  await hexoExec(siteDir, "generate");
 
   const excludePatterns: ExcludePattern[] = [
     ".git",
@@ -405,7 +424,7 @@ export const openDatabaseGit = async (): Promise<void> => {
 
   const loginName = await getLoginName();
 
-  const dbRepoExists = await checkRepoExists("hexo-github-db", octokit);
+  const dbRepoExists = await checkRepoExists(octokit, "hexo-github-db");
 
   if (!dbRepoExists) {
     throw new Error(`"hexo-github-db" not found`);
@@ -416,13 +435,13 @@ export const openDatabaseGit = async (): Promise<void> => {
 };
 
 // 打开用户页面仓库
-export const openPageGit = async (): Promise<void> => {
+export const openPageGit = async (element: TreeItem): Promise<void> => {
   const octokit = await getOctokitInstance();
 
   const loginName = await getLoginName();
 
   const userPageRepoName = `${loginName}.github.io`;
-  const userPageRepoExists = await checkRepoExists(userPageRepoName, octokit);
+  const userPageRepoExists = await checkRepoExists(octokit, userPageRepoName);
 
   if (!userPageRepoExists) {
     throw new Error(`"${userPageRepoName}" not found`);
@@ -433,13 +452,13 @@ export const openPageGit = async (): Promise<void> => {
 };
 
 // 打开 GitHub Pages 网站
-export const openUserPage = async (): Promise<void> => {
+export const openUserPage = async (element: TreeItem): Promise<void> => {
   const octokit = await getOctokitInstance();
 
   const loginName = await getLoginName();
 
   const userPageRepoName = `${loginName}.github.io`;
-  const userPageRepoExists = await checkRepoExists(userPageRepoName, octokit);
+  const userPageRepoExists = await checkRepoExists(octokit, userPageRepoName);
 
   if (!userPageRepoExists) {
     throw new Error(`"${userPageRepoName}" not found`);

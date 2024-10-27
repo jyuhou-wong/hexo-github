@@ -11,12 +11,12 @@ import * as vscode from "vscode";
 import { readdir } from "fs/promises";
 import { basename, join } from "path";
 import {
-  EXT_HEXO_STARTER_DIR,
   POSTS_DIRNAME,
   DRAFTS_DIRNAME,
   STARTER_THEMES_DIRNAME,
   HEXO_CONFIG_NAME,
   HEXO_CONFIG_PATH,
+  EXT_HOME_DIR,
 } from "../services/config";
 import { getHexoConfig } from "../services/hexoService";
 import { existsSync, statSync } from "fs";
@@ -25,13 +25,16 @@ import { getThemesInPackageJson, getThemesInThemesDir } from "../utils";
 
 // Define the TreeItem class which represents each item in the tree
 export class TreeItem extends vscode.TreeItem {
+  public siteDir: string = "";
   constructor(
+    public readonly siteName: string,
     public readonly label: string, // Label to display in the tree
     public readonly collapsibleState: vscode.TreeItemCollapsibleState, // State indicating whether the item can be expanded
     public readonly parent?: TreeItem, // Reference to the parent item
     public readonly uri?: Uri
   ) {
     super(label, collapsibleState);
+    this.siteDir = join(EXT_HOME_DIR, siteName);
   }
 }
 
@@ -39,9 +42,10 @@ export class TreeItem extends vscode.TreeItem {
 export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData: EventEmitter<void> = new EventEmitter<void>(); // Event emitter for notifying tree changes
   readonly onDidChangeTreeData: Event<void> = this._onDidChangeTreeData.event; // Event to listen for tree changes
-  private sourceDir: string = ""; // Directory containing the source files
-  private watcher: FSWatcher = new FSWatcher(); // File system watcher for monitoring changes
+  private sourceDirs: Map<string, string> = new Map();
+  private watchers: Map<string, FSWatcher> = new Map(); // File system watcher for monitoring changes
   private uriCache: Map<string, TreeItem> = new Map(); // Cache for storing TreeItems by their URI
+  private timeout: NodeJS.Timeout | undefined;
 
   constructor(private context: ExtensionContext) {
     this.context = context; // Store the extension context
@@ -69,41 +73,60 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
 
   // Get the children of a specified TreeItem
   async getChildren(element?: TreeItem): Promise<TreeItem[]> {
-    if (!this.sourceDir) await this.setSourceDir(); // Ensure source directory is set
+    if (!this.sourceDirs.size) {
+      await this.setSourceDirs(EXT_HOME_DIR); // Ensure source directory is set
+    }
+
+    const siteName = element?.siteName;
+
+    if (!siteName) {
+      return await this.getRootItems(EXT_HOME_DIR);
+    }
 
     if (element?.collapsibleState === 0) {
       return [];
     }
 
-    if (element?.label === BlogsTreeDataProvider.getLabel(POSTS_DIRNAME)) {
+    if (element?.contextValue == "posts") {
       // If the element is the posts directory, get its children
-      return await this.getItems(join(this.sourceDir, POSTS_DIRNAME), element);
+      const postsDir = join(this.sourceDirs.get(siteName)!, POSTS_DIRNAME);
+      return await this.getItems(siteName, postsDir, element);
     }
 
-    if (element?.label === BlogsTreeDataProvider.getLabel(DRAFTS_DIRNAME)) {
+    if (element?.contextValue == "drafts") {
       // If the element is the drafts directory, get its children
-      return await this.getItems(join(this.sourceDir, DRAFTS_DIRNAME), element);
+      const draftsDir = join(this.sourceDirs.get(siteName)!, DRAFTS_DIRNAME);
+      return await this.getItems(siteName, draftsDir, element);
     }
 
-    if (
-      element?.label === BlogsTreeDataProvider.getLabel(STARTER_THEMES_DIRNAME)
-    ) {
+    if (element?.contextValue == "themes") {
       // If the element is the themes directory, get its children
-      return await this.getThemes(EXT_HEXO_STARTER_DIR, element);
+      return await this.getThemes(siteName, element.siteDir, element);
     }
 
-    if (element?.label === BlogsTreeDataProvider.getLabel()) {
+    if (element?.contextValue == "pages") {
       // If the element is the main pages label, get the pages
-      return await this.getPages(this.sourceDir, element);
+      return await this.getPages(
+        siteName,
+        this.sourceDirs.get(siteName)!,
+        element
+      );
+    }
+
+    if (element?.contextValue == "site") {
+      return await this.getSite(
+        siteName,
+        this.sourceDirs.get(siteName)!,
+        element
+      );
     }
 
     if (element?.uri) {
       // If the element has a resource URI, get its children
-      return await this.getItems(element.uri.fsPath, element);
+      return await this.getItems(siteName, element.uri.fsPath, element);
     }
 
-    // Default case: return the root items
-    return await this.getRootItems(this.sourceDir);
+    return [];
   }
 
   getParent(element: TreeItem): vscode.ProviderResult<TreeItem> {
@@ -115,6 +138,39 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
     try {
       const dirents = await readdir(rootDir, { withFileTypes: true }); // Read directory entries
       const items = dirents
+        .filter(
+          (v) =>
+            statSync(join(rootDir, v.name)).isDirectory() && v.name !== ".git"
+        )
+        .map((dirent) => {
+          const siteName = dirent.name; // Get label for the directory
+          const uri = Uri.file(join(rootDir, siteName));
+          const collapsibleState = TreeItemCollapsibleState.Collapsed;
+          const item = new TreeItem(
+            siteName,
+            siteName,
+            collapsibleState,
+            undefined,
+            uri
+          );
+          item.contextValue = "site";
+          return item;
+        });
+      return items; // Return the root items
+    } catch (err) {
+      console.error(err); // Log any errors
+      return Promise.reject(err); // Reject the promise on error
+    }
+  }
+
+  private async getSite(
+    siteName: string,
+    rootDir: string,
+    parent: TreeItem
+  ): Promise<TreeItem[]> {
+    try {
+      const dirents = await readdir(rootDir, { withFileTypes: true }); // Read directory entries
+      const items = dirents
         .filter((v) => v.name === POSTS_DIRNAME || v.name === DRAFTS_DIRNAME)
         .map((dirent) => {
           const label = BlogsTreeDataProvider.getLabel(dirent.name); // Get label for the directory
@@ -123,28 +179,39 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
             dirent.name !== POSTS_DIRNAME
               ? TreeItemCollapsibleState.Expanded
               : TreeItemCollapsibleState.Collapsed; // Set collapsible state
-          const item = new TreeItem(label, collapsibleState, undefined, uri); // Create a new TreeItem
+          const item = new TreeItem(
+            siteName,
+            label,
+            collapsibleState,
+            parent,
+            uri
+          ); // Create a new TreeItem
           item.contextValue = dirent.name.replace(/^_/, "");
           return item;
         });
 
       const pages = new TreeItem(
+        siteName,
         BlogsTreeDataProvider.getLabel(),
-        TreeItemCollapsibleState.Expanded
+        TreeItemCollapsibleState.Expanded,
+        parent
       );
       pages.contextValue = "pages";
 
       const themes = new TreeItem(
+        siteName,
         BlogsTreeDataProvider.getLabel(STARTER_THEMES_DIRNAME),
-        TreeItemCollapsibleState.Collapsed
+        TreeItemCollapsibleState.Collapsed,
+        parent
       );
       themes.contextValue = "themes";
 
       const configUri = Uri.file(HEXO_CONFIG_PATH);
       const config = new TreeItem(
+        siteName,
         BlogsTreeDataProvider.getLabel(HEXO_CONFIG_NAME),
         TreeItemCollapsibleState.None,
-        undefined,
+        parent,
         configUri
       );
       config.resourceUri = configUri;
@@ -167,9 +234,13 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
     }
   }
 
-  private async getThemes(dir: string, parent: TreeItem): Promise<TreeItem[]> {
-    const localThemes = await getThemesInThemesDir(dir, parent);
-    const npmThemes = await getThemesInPackageJson(dir, parent);
+  private async getThemes(
+    siteName: string,
+    dir: string,
+    parent: TreeItem
+  ): Promise<TreeItem[]> {
+    const localThemes = await getThemesInThemesDir(siteName, dir, parent);
+    const npmThemes = await getThemesInPackageJson(siteName, dir, parent);
 
     // Create an object from local themes for easy lookup
     const localThemesObject = Object.fromEntries(
@@ -192,7 +263,11 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   // Get the pages under a specific directory
-  private async getPages(dir: string, parent: TreeItem): Promise<TreeItem[]> {
+  private async getPages(
+    siteName: string,
+    dir: string,
+    parent: TreeItem
+  ): Promise<TreeItem[]> {
     try {
       const dirents = await readdir(dir, { withFileTypes: true }); // Read directory entries
       const items = dirents
@@ -209,7 +284,13 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
           const uri = Uri.file(fullPath); // Create a URI for the file
           const label = dirent.name; // Use the directory name as the label
           const collapsibleState = TreeItemCollapsibleState.None; // Set as non-collapsible
-          const item = new TreeItem(label, collapsibleState, parent, uri); // Create a new TreeItem
+          const item = new TreeItem(
+            siteName,
+            label,
+            collapsibleState,
+            parent,
+            uri
+          ); // Create a new TreeItem
           item.resourceUri = uri;
 
           item.command = {
@@ -229,7 +310,11 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   // Get items (files and directories) under a specified path
-  private async getItems(path: string, parent: TreeItem): Promise<TreeItem[]> {
+  private async getItems(
+    siteName: string,
+    path: string,
+    parent: TreeItem
+  ): Promise<TreeItem[]> {
     try {
       const dirents = await readdir(path, { withFileTypes: true }); // Read directory entries
       const items = dirents.map((dirent) => {
@@ -245,7 +330,13 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
           ? TreeItemCollapsibleState.Collapsed // Set as collapsible if it is a directory
           : TreeItemCollapsibleState.None; // Non-collapsible for files
 
-        const item = new TreeItem(label, collapsibleState, parent, uri); // Create a new TreeItem
+        const item = new TreeItem(
+          siteName,
+          label,
+          collapsibleState,
+          parent,
+          uri
+        ); // Create a new TreeItem
         item.resourceUri = uri;
 
         if (!isDirectory) {
@@ -310,17 +401,25 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   refresh(): void {
-    this.uriCache.clear(); // Clear the cache on refresh
-    this._onDidChangeTreeData.fire(); // Notify that the tree data has changed
+    // 清除之前的 timeout
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+
+    // 设置一个新的 timeout
+    this.timeout = setTimeout(() => {
+      this.uriCache.clear(); // 清除缓存
+      this._onDidChangeTreeData.fire(); // 通知数据已更改
+    }, 300); // 300 毫秒的防抖延迟
   }
 
   dispose(): void {
-    this.watcher.close(); // Close the watcher when disposing
+    this.watchers.forEach((v) => v.close()); // Close the watcher when disposing
   }
 
   // Watch the source directory for changes
-  private watchSourceDir(dir: string): void {
-    this.watcher = watch(dir, {
+  private watchSourceDir(dir: string): FSWatcher {
+    const watcher = watch(dir, {
       persistent: true,
       ignoreInitial: true, // Ignore initial events
     });
@@ -332,19 +431,29 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
     };
 
     // Listen for file and directory events
-    this.watcher.on("add", (path) => handleEvent("File added", path));
-    this.watcher.on("addDir", (path) => handleEvent("Directory added", path));
-    this.watcher.on("unlink", (path) => handleEvent("File removed", path));
-    this.watcher.on("unlinkDir", (path) =>
-      handleEvent("Directory removed", path)
-    );
-    this.watcher.on("change", (path) => handleEvent("File renamed", path));
+    watcher.on("add", (path) => handleEvent("File added", path));
+    watcher.on("addDir", (path) => handleEvent("Directory added", path));
+    watcher.on("unlink", (path) => handleEvent("File removed", path));
+    watcher.on("unlinkDir", (path) => handleEvent("Directory removed", path));
+    watcher.on("change", (path) => handleEvent("File renamed", path));
+    return watcher;
   }
 
-  // Set the source directory based on the Hexo configuration
-  private async setSourceDir() {
-    const config = await getHexoConfig(); // Get Hexo configuration
-    this.sourceDir = join(EXT_HEXO_STARTER_DIR, config.source_dir); // Set the source directory
-    this.watchSourceDir(this.sourceDir); // Start watching the source directory
+  private async setSourceDirs(rootDir: string) {
+    const dirents = await readdir(rootDir, { withFileTypes: true }); // Read directory entries
+    for (const dirent of dirents) {
+      if (
+        !statSync(join(rootDir, dirent.name)).isDirectory() ||
+        dirent.name == ".git"
+      ) {
+        continue;
+      }
+      const siteName = dirent.name;
+      const siteDir = join(rootDir, dirent.name);
+      const config = await getHexoConfig(siteDir); // Get Hexo configuration
+      const sourceDir = join(siteDir, config.source_dir);
+      this.sourceDirs.set(siteName, sourceDir); // Start watching the source directory
+      this.watchers.set(siteName, this.watchSourceDir(sourceDir));
+    }
   }
 }

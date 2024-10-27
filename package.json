@@ -138,6 +138,14 @@
         "title": "Delete theme"
       },
       {
+        "command": "hexo-github.deleteSite",
+        "icon": {
+          "dark": "resources/dark/hexo-github-delete.svg",
+          "light": "resources/light/hexo-github-delete.svg"
+        },
+        "title": "Delete site"
+      },
+      {
         "command": "hexo-github.deploy",
         "title": "Deploy blog"
       },
@@ -160,19 +168,24 @@
           "command": "hexo-github.openSourceGit",
           "when": "view == hexo-github-blogs",
           "group": "navigation"
-        },
-        {
-          "command": "hexo-github.openPageGit",
-          "when": "view == hexo-github-blogs",
-          "group": "navigation"
-        },
-        {
-          "command": "hexo-github.openPage",
-          "when": "view == hexo-github-blogs",
-          "group": "navigation"
         }
       ],
       "view/item/context": [
+        {
+          "command": "hexo-github.openPageGit",
+          "when": "view == hexo-github-blogs && viewItem == site",
+          "group": "inline"
+        },
+        {
+          "command": "hexo-github.openPage",
+          "when": "view == hexo-github-blogs && viewItem == site",
+          "group": "inline"
+        },
+        {
+          "command": "hexo-github.deleteSite",
+          "when": "view == hexo-github-blogs && viewItem == site",
+          "group": "inline"
+        },
         {
           "command": "hexo-github.addTheme",
           "when": "view == hexo-github-blogs && viewItem == themes",
@@ -205,7 +218,7 @@
         },
         {
           "command": "hexo-github.deleteItem",
-          "when": "view == hexo-github-blogs && !(viewItem == config || viewItem == themes || viewItem == theme || viewItem == pages || viewItem == drafts || viewItem == posts)",
+          "when": "view == hexo-github-blogs && !(viewItem == site || viewItem == config || viewItem == themes || viewItem == theme || viewItem == pages || viewItem == drafts || viewItem == posts)",
           "group": "inline"
         }
       ],

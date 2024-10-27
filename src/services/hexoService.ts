@@ -26,11 +26,14 @@ interface Args {
 }
 
 // Initialize Hexo
-export const initializeHexo = async (args: Args = {}) => {
+export const initializeHexo = async (
+  siteDir: string = EXT_HEXO_STARTER_DIR,
+  args: Args = {}
+) => {
   // 初始化之前安装丢失的插件
-  await installMissingDependencies(EXT_HEXO_STARTER_DIR);
+  await installMissingDependencies(siteDir);
 
-  const hexo = new Hexo(EXT_HEXO_STARTER_DIR, args);
+  const hexo = new Hexo(siteDir, args);
   await hexo.init();
   return hexo;
 };
@@ -47,12 +50,12 @@ const getCommand = (hexo: Hexo, args: any) => {
 };
 
 // Execute Hexo command
-export const hexoExec = async (cmd: string) => {
+export const hexoExec = async (siteDir: string, cmd: string) => {
   if (!cmd) throw new Error("Command cannot be empty!");
 
   const args = getArgs(cmd);
 
-  const hexo = await initializeHexo(args);
+  const hexo = await initializeHexo(siteDir, args);
   const command = getCommand(hexo, args);
 
   process.on("SIGINT", () => {
@@ -74,72 +77,58 @@ export const hexoExec = async (cmd: string) => {
 };
 
 // Get preview URL for a given path
-export const getPreviewUrl = async (
+export const getPreviewRoute = async (
+  siteDir: string,
   path: string,
   cmd: string = "--draft --debug"
 ) => {
   const args = getArgs(cmd);
-  const hexo = await initializeHexo(args);
+  const hexo = await initializeHexo(siteDir, args);
   await hexo.load();
 
-  const source_path = join(EXT_HEXO_STARTER_DIR, hexo.config.source_dir);
+  const source_dir = hexo.source_dir;
   const generators = await hexo._runGenerators();
 
   const matchingItem = generators.find(({ layout, data }: any) => {
     if (!layout || !data.source) return false;
-    return arePathsEqual(path, join(source_path, data.source));
+    return arePathsEqual(path, join(source_dir, data.source));
   });
 
   hexo.exit();
 
   if (!matchingItem) throw new Error("This file is not a blog document");
 
-  return `http://localhost:${(hexo.config.server as any).port}/${
-    matchingItem.path
-  }`;
+  return matchingItem.path;
 };
 
 // Get Hexo config
-export const getHexoConfig = async () => {
-  const hexo = await initializeHexo();
+export const getHexoConfig = async (siteDir: string) => {
+  const hexo = await initializeHexo(siteDir, {});
   return hexo.config;
 };
 
 // 处理创建文件的通用逻辑
 export const handleCreateFile = async (
+  siteDir: string,
   name: string,
   type: string,
   context: vscode.ExtensionContext,
   parentPath?: string
 ) => {
-  const config = await getHexoConfig();
+  const hexo = await initializeHexo(siteDir, {});
   let path: string;
 
   if (type === "Page") {
-    path = join(
-      EXT_HEXO_STARTER_DIR,
-      config.source_dir,
-      parentPath || name,
-      "index.md"
-    );
+    path = join(hexo.source_dir, parentPath || name, "index.md");
     if (existsSync(path)) throw new Error(`Page ${name} already exists`);
-    await hexoExec(`new page "${name}"`);
+    await hexoExec(siteDir, `new page "${name}"`);
   } else if (type === "Draft") {
-    path = join(
-      EXT_HEXO_STARTER_DIR,
-      config.source_dir,
-      DRAFTS_DIRNAME,
-      `${name}.md`
-    );
+    path = join(hexo.source_dir, DRAFTS_DIRNAME, `${name}.md`);
     if (existsSync(path)) throw new Error(`Draft ${name} already exists`);
-    await hexoExec(`new draft "${name}"`);
+    await hexoExec(siteDir, `new draft "${name}"`);
   } else {
     // Assume it's a Blog
-    const postDir = join(
-      EXT_HEXO_STARTER_DIR,
-      config.source_dir,
-      POSTS_DIRNAME
-    );
+    const postDir = join(hexo.source_dir, POSTS_DIRNAME);
 
     const relativePath = parentPath
       ? parentPath.substring(postDir.length + sep.length).replace(/[/\\]/g, "/")
@@ -151,7 +140,7 @@ export const handleCreateFile = async (
       await revealItem(Uri.file(path), context);
       throw new Error(`Blog ${name} already exists`);
     }
-    await hexoExec(`new --path "${relativePath}/${name}"`);
+    await hexoExec(siteDir, `new --path "${relativePath}/${name}"`);
   }
 
   await openFile(path);
