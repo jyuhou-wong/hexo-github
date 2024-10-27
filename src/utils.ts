@@ -50,7 +50,6 @@ export const handleError = (
   }
 
   vscode.window.showErrorMessage(errorMessage);
-  throw new Error(errorMessage);
 };
 
 // Promisify exec for easier async/await usage
@@ -78,6 +77,7 @@ export const isModuleExisted = (
 // Install NPM modules
 export const installNpmModule = async (dirPath: string, name: string) => {
   try {
+    vscode.window.showInformationMessage(`Installing "${name}" module.`);
     await execAsync(`npm install ${name}`, { cwd: dirPath });
     vscode.window.showInformationMessage(`"${name}" installed successfully.`);
     return true;
@@ -90,6 +90,7 @@ export const installNpmModule = async (dirPath: string, name: string) => {
 // Install NPM modules
 export const installNpmModules = async (dirPath: string) => {
   try {
+    vscode.window.showInformationMessage("Installing NPM modules...");
     await execAsync("npm install", { cwd: dirPath });
     vscode.window.showInformationMessage("NPM modules installed successfully.");
     return true;
@@ -650,4 +651,21 @@ export const getRandomAvailablePort = async (): Promise<number> => {
       reject(new Error("Could not find an available port."));
     });
   });
+};
+
+/**
+ * Refreshes the BlogsTreeDataProvider if it exists.
+ * @param context - The extension context.
+ */
+export const refreshBlogsProvider = (context: vscode.ExtensionContext) => {
+  const blogsProvider: BlogsTreeDataProvider | undefined =
+    context.subscriptions.find(
+      (subscription) => subscription instanceof BlogsTreeDataProvider
+    );
+
+  if (blogsProvider) {
+    blogsProvider.refresh(); // Call refresh if the provider exists
+  } else {
+    vscode.window.showWarningMessage("BlogsTreeDataProvider not found.");
+  }
 };

@@ -15,7 +15,6 @@ import {
   DRAFTS_DIRNAME,
   STARTER_THEMES_DIRNAME,
   HEXO_CONFIG_NAME,
-  HEXO_CONFIG_PATH,
   EXT_HOME_DIR,
 } from "../services/config";
 import { getHexoConfig } from "../services/hexoService";
@@ -206,7 +205,9 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
       );
       themes.contextValue = "themes";
 
-      const configUri = Uri.file(HEXO_CONFIG_PATH);
+      const configUri = Uri.file(
+        join(EXT_HOME_DIR, siteName, HEXO_CONFIG_NAME)
+      );
       const config = new TreeItem(
         siteName,
         BlogsTreeDataProvider.getLabel(HEXO_CONFIG_NAME),
@@ -408,6 +409,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
 
     // 设置一个新的 timeout
     this.timeout = setTimeout(() => {
+      this.sourceDirs.clear(); // 清楚source
       this.uriCache.clear(); // 清除缓存
       this._onDidChangeTreeData.fire(); // 通知数据已更改
     }, 300); // 300 毫秒的防抖延迟

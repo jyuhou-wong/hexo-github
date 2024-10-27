@@ -8,7 +8,7 @@ import {
   openFile,
   revealItem,
 } from "../utils";
-import { EXT_HEXO_STARTER_DIR, DRAFTS_DIRNAME, POSTS_DIRNAME } from "./config";
+import { DRAFTS_DIRNAME, POSTS_DIRNAME } from "./config";
 import { join, sep } from "path";
 import { existsSync } from "fs";
 import { Uri } from "vscode";
@@ -26,10 +26,7 @@ interface Args {
 }
 
 // Initialize Hexo
-export const initializeHexo = async (
-  siteDir: string = EXT_HEXO_STARTER_DIR,
-  args: Args = {}
-) => {
+export const initializeHexo = async (siteDir: string, args: Args = {}) => {
   // 初始化之前安装丢失的插件
   await installMissingDependencies(siteDir);
 

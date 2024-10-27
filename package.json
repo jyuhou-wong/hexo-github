@@ -138,6 +138,14 @@
         "title": "Delete theme"
       },
       {
+        "command": "hexo-github.addSite",
+        "icon": {
+          "dark": "resources/dark/hexo-github-add.svg",
+          "light": "resources/light/hexo-github-add.svg"
+        },
+        "title": "Add site"
+      },
+      {
         "command": "hexo-github.deleteSite",
         "icon": {
           "dark": "resources/dark/hexo-github-delete.svg",
@@ -164,6 +172,11 @@
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "hexo-github.addSite",
+          "when": "view == hexo-github-blogs",
+          "group": "navigation"
+        },
         {
           "command": "hexo-github.openSourceGit",
           "when": "view == hexo-github-blogs",
@@ -224,29 +237,7 @@
       ],
       "editor/context": [
         {
-          "command": "hexo-github.pullHexo",
-          "group": "hexo-github"
-        },
-        {
-          "command": "hexo-github.pushHexo",
-          "group": "hexo-github"
-        },
-        {
           "command": "hexo-github.loginToGitHub",
-          "group": "hexo-github"
-        },
-        {
-          "command": "hexo-github.startServer",
-          "group": "hexo-github",
-          "when": "!hexo-github.serverStatus"
-        },
-        {
-          "command": "hexo-github.stopServer",
-          "group": "hexo-github",
-          "when": "hexo-github.serverStatus"
-        },
-        {
-          "command": "hexo-github.new",
           "group": "hexo-github"
         },
         {

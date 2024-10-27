@@ -23,11 +23,7 @@ export const pullHexoRepository = async (
   element: TreeItem,
   context: vscode.ExtensionContext
 ) => {
-  await executeWithFeedback(
-    pullHexo,
-    "Successfully pulled hexo-github-db repository!",
-    "Pull failed"
-  );
+  await pullHexo();
 };
 
 // Push to Hexo repository
@@ -35,11 +31,7 @@ export const pushHexoRepository = async (
   element: TreeItem,
   context: vscode.ExtensionContext
 ) => {
-  await executeWithFeedback(
-    pushHexo,
-    "Successfully pushed to hexo-github-db repository!",
-    "Push failed"
-  );
+  await pushHexo();
 };
 
 // Open source Git repository (assuming this should be a different action)

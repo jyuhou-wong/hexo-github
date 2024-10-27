@@ -19,6 +19,7 @@ import {
   isValidPath,
   openFile,
   promptForName,
+  refreshBlogsProvider,
   revealItem,
   searchNpmPackages,
 } from "../utils";
@@ -26,13 +27,15 @@ import {
   checkRepoExists,
   deleteRemoteRepo,
   getOctokitInstance,
+  initializeSite,
+  pushHexo,
   pushToGitHubPages,
 } from "../services/githubService";
 import type { Server } from "http";
 import {
-  EXT_HEXO_STARTER_DIR,
   DRAFTS_DIRNAME,
   POSTS_DIRNAME,
+  EXT_HOME_DIR,
 } from "../services/config";
 import { basename, join, sep } from "path";
 import { existsSync, rmSync } from "fs";
@@ -40,6 +43,7 @@ import {
   BlogsTreeDataProvider,
   TreeItem,
 } from "../providers/blogsTreeDataProvider";
+import simpleGit from "simple-git";
 
 interface ServerObj {
   server: Server;
@@ -76,13 +80,13 @@ export const addItem = async (
       // 处理页面
       if (label === BlogsTreeDataProvider.getLabel()) {
         const name = await promptForName("Please enter the page name");
-        if (!name) return; // 验证名称
+        if (!name) return;
         await handleCreateFile(siteDir, name, "Page", context); // 创建页面
       }
       // 处理草稿
       else if (label === BlogsTreeDataProvider.getLabel(DRAFTS_DIRNAME)) {
         const name = await promptForName("Please enter the draft name");
-        if (!name) return; // 验证名称
+        if (!name) return;
         await handleCreateFile(siteDir, name, "Draft", context); // 创建草稿
       }
       // 处理博客
@@ -96,17 +100,12 @@ export const addItem = async (
 
         if (selection === "Sub Route") {
           const name = await promptForName("Please enter the sub route name");
-          if (!name) return; // 验证名称
-          const path = join(
-            EXT_HEXO_STARTER_DIR,
-            config.source_dir,
-            POSTS_DIRNAME,
-            name
-          );
+          if (!name) return;
+          const path = join(siteDir, config.source_dir, POSTS_DIRNAME, name);
           createDirectory(path); // 创建子目录
         } else {
           const name = await promptForName("Please enter the blog name");
-          if (!name) return; // 验证名称
+          if (!name) return;
           await handleCreateFile(siteDir, name, "Blog", context); // 创建博客
         }
       }
@@ -121,12 +120,12 @@ export const addItem = async (
 
       if (selection === "Sub Route") {
         const name = await promptForName("Please enter the sub route name");
-        if (!name) return; // 验证名称
+        if (!name) return;
         const route = join(element.resourceUri!.fsPath, name);
         createDirectory(route); // 创建子目录
       } else {
         const name = await promptForName("Please enter the blog name");
-        if (!name) return; // 验证名称
+        if (!name) return;
         await handleCreateFile(
           siteDir,
           name,
@@ -159,7 +158,7 @@ export const createNewBlogPost = async (
 
     const config = await getHexoConfig(siteDir);
     const postPath = join(
-      EXT_HEXO_STARTER_DIR,
+      siteDir,
       config.source_dir,
       POSTS_DIRNAME,
       `${path}.md`
@@ -245,7 +244,7 @@ export const publishDraft = async (
 
     const config = await getHexoConfig(siteDir);
     const postPath = join(
-      EXT_HEXO_STARTER_DIR,
+      siteDir,
       config.source_dir,
       POSTS_DIRNAME,
       `${name}.md`
@@ -348,6 +347,7 @@ export const addTheme = async (
   element: TreeItem,
   context: vscode.ExtensionContext
 ) => {
+  const { siteDir } = element;
   vscode.window.showInformationMessage("Loading...");
 
   const options = await searchNpmPackages("hexo-theme-", /^hexo-theme-[^-]+$/);
@@ -360,16 +360,9 @@ export const addTheme = async (
   vscode.window.showInformationMessage("Installing...");
 
   try {
-    await installNpmModule(EXT_HEXO_STARTER_DIR, selection);
+    await installNpmModule(siteDir, selection);
 
-    const blogsProvider: BlogsTreeDataProvider | undefined =
-      context.subscriptions.find(
-        (subscription) => subscription instanceof BlogsTreeDataProvider
-      );
-
-    if (blogsProvider) {
-      blogsProvider.refresh();
-    }
+    refreshBlogsProvider(context);
   } catch (error) {
     handleError(error, "Failed to test");
   }
@@ -379,10 +372,10 @@ export const deleteTheme = async (
   element: TreeItem,
   context: vscode.ExtensionContext
 ): Promise<boolean> => {
-  const { label } = element;
+  const { siteDir, label } = element;
 
-  const themePath = join(EXT_HEXO_STARTER_DIR, "themes", label);
-  const themeConfigPath = join(EXT_HEXO_STARTER_DIR, `_config.${label}.yml`);
+  const themePath = join(siteDir, "themes", label);
+  const themeConfigPath = join(siteDir, `_config.${label}.yml`);
 
   // Ask for user confirmation
   const confirmation = await vscode.window.showWarningMessage(
@@ -405,10 +398,10 @@ export const deleteTheme = async (
     }
   }
 
-  if (isModuleExisted(EXT_HEXO_STARTER_DIR, `hexo-theme-${label}`)) {
+  if (isModuleExisted(siteDir, `hexo-theme-${label}`)) {
     try {
       await execAsync(`npm uninstall hexo-theme-${label}`, {
-        cwd: EXT_HEXO_STARTER_DIR,
+        cwd: siteDir,
       });
       vscode.window.showInformationMessage(
         `"hexo-theme-${label}" npm module uninstalled successfully.`
@@ -441,15 +434,35 @@ export const deleteTheme = async (
     }
   }
 
-  const blogsProvider: BlogsTreeDataProvider | undefined =
-    context.subscriptions.find(
-      (subscription) => subscription instanceof BlogsTreeDataProvider
-    );
-
-  if (blogsProvider) {
-    blogsProvider.refresh();
-  }
+  refreshBlogsProvider(context);
   return true; // Return the array of TreeItem representing themes
+};
+
+// add theme
+export const addSite = async (
+  element: TreeItem,
+  context: vscode.ExtensionContext
+) => {
+  try {
+    const siteName = await promptForName("Please enter the site name");
+    if (!siteName) return;
+
+    const octokit = await getOctokitInstance();
+    const repoExists = await checkRepoExists(octokit, siteName);
+
+    if (repoExists) {
+      throw Error(`Site "${siteName}" already exists on github.`);
+    }
+
+    const siteDir = join(EXT_HOME_DIR, siteName);
+
+    await initializeSite(siteDir);
+    refreshBlogsProvider(context);
+    await pushToGitHubPages({ siteDir, siteName } as TreeItem);
+    await pushHexo();
+  } catch (error) {
+    handleError(error);
+  }
 };
 
 export const deleteSite = async (

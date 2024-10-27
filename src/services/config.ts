@@ -26,9 +26,7 @@ export const HOME_DIRECTORY = homedir();
 export const EXT_HOME_DIR = join(HOME_DIRECTORY, EXT_HOME_DIRNAME);
 
 export const EXT_CONFIG_PATH = join(EXT_HOME_DIR, EXT_CONFIG_NAME);
-export const EXT_HEXO_STARTER_DIR = join(EXT_HOME_DIR, HEXO_STARTER_DIRNAME);
 export const ZIP_FILE_PATH = join(EXT_HOME_DIR, `${HEXO_STARTER_DIRNAME}.zip`);
 export const STARTER_REPO_ZIP_URL =
 "https://github.com/hexojs/hexo-starter/archive/refs/heads/master.zip";
 
-export const HEXO_CONFIG_PATH = join(EXT_HEXO_STARTER_DIR, HEXO_CONFIG_NAME);
