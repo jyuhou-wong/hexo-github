@@ -17,7 +17,7 @@ import {
   EXT_HOME_DIR,
 } from "./config";
 import { hexoExec, initializeHexo } from "./hexoService";
-import { handleError, installNpmModules } from "../utils";
+import { handleError, installNpmModules, refreshBlogsProvider } from "../utils";
 import { TreeItem } from "../providers/blogsTreeDataProvider";
 
 // 确保配置目录存在
@@ -266,27 +266,28 @@ const handleGitOperation = async (
       break;
     case "push":
       await git.push("origin", "main");
-      vscode.window.showInformationMessage(
-        "Pushed to hexo-github-db successfully."
-      );
       break;
   }
 };
 
 // 推送到 Hexo 仓库
-export const pushHexo = async (): Promise<void> => {
-  await pullHexo();
+export const pushHexo = async (
+  context: vscode.ExtensionContext
+): Promise<void> => {
+  await pullHexo(context);
   const git = simpleGit(EXT_HOME_DIR);
   await handleGitOperation(git, "add");
   await handleGitOperation(git, "commit", "feat: update hexo database");
   await handleGitOperation(git, "push");
   vscode.window.showInformationMessage(
-    "Successfully pushed to hexo-github-db repository!"
+    "Pushed to hexo-github-db successfully."
   );
 };
 
 // 拉取 Hexo 仓库
-export const pullHexo = async (): Promise<void> => {
+export const pullHexo = async (
+  context: vscode.ExtensionContext
+): Promise<void> => {
   const octokit = await getOctokitInstance();
   const repoExists = await checkRepoExists(octokit, "hexo-github-db");
   const git = simpleGit(EXT_HOME_DIR);
@@ -301,6 +302,8 @@ export const pullHexo = async (): Promise<void> => {
   vscode.window.showInformationMessage(
     "Pulled latest changes from hexo-github-db successfully."
   );
+
+  refreshBlogsProvider(context);
 };
 
 // 处理已存在的仓库
@@ -323,6 +326,8 @@ const initializeLocalRepo = async (git: SimpleGit): Promise<void> => {
   vscode.window.showInformationMessage(
     "Local repository does not exist. Pulling..."
   );
+  await git.init();
+  await git.add(".");
   const loginName = await getLoginName();
   const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${loginName}/hexo-github-db.git`;
   await git.addRemote("origin", remoteUrl);
@@ -359,7 +364,7 @@ const createLocalRepo = async (octokit: any, git: SimpleGit): Promise<void> => {
   const readmePath = path.join(EXT_HOME_DIR, "README.md");
   fs.writeFileSync(
     readmePath,
-    "# Hexo GitHub Pages Repository\n\nThis is my blog."
+    "# Hexo GitHub Pages Repository\n\nThis is my blog released by using [hexo-github](https://github.com/jyuhou-wong/hexo-github) vscode extensions."
   );
 
   const gitignorePath = path.join(EXT_HOME_DIR, ".gitignore");

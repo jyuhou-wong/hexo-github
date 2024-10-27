@@ -2,7 +2,7 @@
   "name": "hexo-github",
   "displayName": "hexo-github",
   "description": "A VSCode extension for managing Hexo blogs with GitHub integration.",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "publisher": "Jyuhou Huang 黄宇豪 <jyuhou.wong@gmail.com>",
   "repository": {
     "type": "git",
@@ -67,11 +67,19 @@
       },
       {
         "command": "hexo-github.pullHexo",
-        "title": "Pull Hexo"
+        "title": "Pull from GitHub",
+        "icon": {
+          "dark": "resources/dark/hexo-github-pull.svg",
+          "light": "resources/light/hexo-github-pull.svg"
+        }
       },
       {
         "command": "hexo-github.pushHexo",
-        "title": "Push Hexo"
+        "title": "Push to Github",
+        "icon": {
+          "dark": "resources/dark/hexo-github-push.svg",
+          "light": "resources/light/hexo-github-push.svg"
+        }
       },
       {
         "command": "hexo-github.cmd",
@@ -172,6 +180,16 @@
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "hexo-github.pullHexo",
+          "when": "view == hexo-github-blogs",
+          "group": "navigation"
+        },
+        {
+          "command": "hexo-github.pushHexo",
+          "when": "view == hexo-github-blogs",
+          "group": "navigation"
+        },
         {
           "command": "hexo-github.addSite",
           "when": "view == hexo-github-blogs",

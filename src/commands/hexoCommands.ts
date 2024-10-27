@@ -459,7 +459,7 @@ export const addSite = async (
     await initializeSite(siteDir);
     refreshBlogsProvider(context);
     await pushToGitHubPages({ siteDir, siteName } as TreeItem);
-    await pushHexo();
+    await pushHexo(context);
   } catch (error) {
     handleError(error);
   }
