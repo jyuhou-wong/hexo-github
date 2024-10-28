@@ -22,9 +22,9 @@ import { TreeItem } from "../providers/blogsTreeDataProvider";
 
 export let accessToken: string | null = "";
 
-// 确保配置目录存在
-if (!fs.existsSync(EXT_CONFIG_PATH)) {
-  fs.mkdirSync(EXT_CONFIG_PATH, { recursive: true });
+// 确保插件用户目录存在
+if (!fs.existsSync(EXT_HOME_DIR)) {
+  fs.mkdirSync(EXT_HOME_DIR, { recursive: true });
 }
 
 // 定义接口
@@ -58,7 +58,7 @@ export const loadAccessToken = (): string | null => {
     }
   }
 
-  if (!accessToken) {
+  if (!accessToken && config.accessToken) {
     vscode.commands.executeCommand("setContext", "hexo-github.isLogin", true);
     vscode.commands.executeCommand("hexo-github.refreshTreeview").then(() => {
       vscode.commands.executeCommand("hexo-github.pullHexo");
@@ -358,7 +358,7 @@ const handleNonExistingRepo = async (
 const createLocalRepo = async (octokit: any, git: SimpleGit): Promise<void> => {
   const { data: user } = await octokit.rest.users.getAuthenticated();
   const loginName = user.login;
-  git.init();
+  await git.init();
 
   const readmePath = path.join(EXT_HOME_DIR, "README.md");
   fs.writeFileSync(
