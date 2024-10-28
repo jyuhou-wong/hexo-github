@@ -2,6 +2,11 @@
 
 All notable changes to the "hexo-github" extension will be documented in this file.
 
+## [2.0.6] - 2024-10-28
+
+### Added
+- Added required modules installing method within the initialization of Hexo.
+
 ## [2.0.5] - 2024-10-28
 
 ### Fixed
