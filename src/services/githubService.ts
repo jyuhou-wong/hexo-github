@@ -386,6 +386,10 @@ const createUserPageRepoIfNeeded = async (loginName: string): Promise<void> => {
   const userPageDir = path.join(EXT_HOME_DIR, userPageRepoName);
   if (!fs.existsSync(userPageDir)) {
     await initializeSite(userPageDir);
+    await pushToGitHubPages({
+      siteDir: userPageDir,
+      siteName: userPageRepoName,
+    } as TreeItem);
   }
 };
 
