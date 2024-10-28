@@ -132,6 +132,28 @@ export const installMissingDependencies = async (dirPath: string) => {
 };
 
 /**
+ * Installs specified modules in the given directory if they are not already installed.
+ * @param dirPath - The directory path where the modules will be installed.
+ * @param modules - An array of module names to install.
+ */
+export const installModules = async (dirPath: string, modules: string[]) => {
+  // Ensure the directory exists
+  if (!existsSync(dirPath)) {
+    vscode.window.showWarningMessage(`Directory "${dirPath}" does not exist.`);
+    return;
+  }
+
+  // Check each module and install if missing
+  for (const moduleName of modules) {
+    const installed = await isModuleExisted(dirPath, moduleName);
+    if (installed) {
+      continue;
+    }
+    await installNpmModule(dirPath, moduleName); // Install the missing module
+  }
+};
+
+/**
  * Checks if a path is valid
  * @param path - The path to check
  * @returns Returns true if the path is valid, otherwise false
@@ -667,5 +689,29 @@ export const refreshBlogsProvider = (context: vscode.ExtensionContext) => {
     blogsProvider.refresh(); // Call refresh if the provider exists
   } else {
     vscode.window.showWarningMessage("BlogsTreeDataProvider not found.");
+  }
+};
+
+/**
+ * Initializes the source directory by creating default folders for the provided items.
+ * @param sourceDir - The source directory where the folders will be created.
+ * @param items - An array of item names for which folders will be created.
+ */
+export const initSourceItem = (sourceDir: string, items: string[]) => {
+  // Ensure the source directory exists
+  if (!existsSync(sourceDir)) {
+    vscode.window.showErrorMessage(
+      `Source directory "${sourceDir}" does not exist.`
+    );
+    return;
+  }
+
+  // Create folders for each item if they do not already exist
+  for (const item of items) {
+    const itemDir = join(sourceDir, item);
+    if (!existsSync(itemDir)) {
+      mkdirSync(itemDir);
+      vscode.window.showInformationMessage(`Created folder: "${item}"`);
+    }
   }
 };

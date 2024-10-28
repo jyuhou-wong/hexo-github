@@ -4,11 +4,13 @@ import {
   arePathsEqual,
   getArgs,
   handleError,
+  initSourceItem,
   installMissingDependencies,
+  installModules,
   openFile,
   revealItem,
 } from "../utils";
-import { DRAFTS_DIRNAME, POSTS_DIRNAME } from "./config";
+import { DRAFTS_DIRNAME, POSTS_DIRNAME, REQUIRED_MODULES } from "./config";
 import { join, sep } from "path";
 import { existsSync } from "fs";
 import { Uri } from "vscode";
@@ -27,11 +29,18 @@ interface Args {
 
 // Initialize Hexo
 export const initializeHexo = async (siteDir: string, args: Args = {}) => {
-  // 初始化之前安装丢失的插件
+  // 初始化之前安装 package 中丢失的插件
   await installMissingDependencies(siteDir);
 
+  // 确保已经安装了必备插件
+  await installModules(siteDir, REQUIRED_MODULES);
+
+  // 初始化 HEXO
   const hexo = new Hexo(siteDir, args);
   await hexo.init();
+
+  // 确保草稿和文章目录都存在，以防止视图渲染出问题
+  initSourceItem(hexo.source_dir, [POSTS_DIRNAME, DRAFTS_DIRNAME]);
   return hexo;
 };
 

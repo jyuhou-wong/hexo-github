@@ -9,7 +9,6 @@ export const REDIRECT_URI = "http://localhost:3000/auth/callback";
 // HEXO Config Name
 export const HEXO_CONFIG_NAME = "_config.yml";
 
-
 // HEXO Directories Name
 export const POSTS_DIRNAME = "_posts";
 export const DRAFTS_DIRNAME = "_drafts";
@@ -28,5 +27,7 @@ export const EXT_HOME_DIR = join(HOME_DIRECTORY, EXT_HOME_DIRNAME);
 export const EXT_CONFIG_PATH = join(EXT_HOME_DIR, EXT_CONFIG_NAME);
 export const ZIP_FILE_PATH = join(EXT_HOME_DIR, `${HEXO_STARTER_DIRNAME}.zip`);
 export const STARTER_REPO_ZIP_URL =
-"https://github.com/hexojs/hexo-starter/archive/refs/heads/master.zip";
+  "https://github.com/hexojs/hexo-starter/archive/refs/heads/master.zip";
 
+// Required Modules
+export const REQUIRED_MODULES = ["hexo-server-live"];
