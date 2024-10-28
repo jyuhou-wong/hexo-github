@@ -2,6 +2,16 @@
 
 All notable changes to the "hexo-github" extension will be documented in this file.
 
+## [2.0.9] - 2024-10-29
+
+### Added
+- Added extension icon.
+
+## [2.0.8] - 2024-10-29
+
+### Changed
+- Changed display name.
+  
 ## [2.0.6] - 2024-10-28
 
 ### Added
