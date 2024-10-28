@@ -89,6 +89,12 @@ Hexo-GitHub 是一个 VSCode 插件，专注于通过直观的可视化操作简
 
 All notable changes to the "hexo-github" extension will be documented in this file.
 
+### [2.0.5] - 2024-10-28
+
+#### Fixed
+- Fixed default user page creation issue.
+- Fixed configuration creation and git initialization issue.
+
 ### [2.0.3] - 2024-10-28
 
 #### Added
