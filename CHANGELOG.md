@@ -2,6 +2,11 @@
 
 All notable changes to the "hexo-github" extension will be documented in this file.
 
+## [2.0.10] - 2024-10-29
+
+### Added
+- Updated installation instructions to include marketplace installation option.
+
 ## [2.0.9] - 2024-10-29
 
 ### Added

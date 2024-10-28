@@ -29,8 +29,9 @@ Hexo-GitHub 是一个 VSCode 插件，专注于通过直观的可视化操作简
 
 ## 安装
 
-1. **下载 VSIX 文件**: 前往 [发布页面](https://github.com/jyuhou-wong/hexo-github/releases) 下载最新的 VSIX 文件。
-2. **安装插件**:
+1. **从 VSCode 插件市场安装**: 在 VSCode 中搜索 “Hexo GitHub” 或访问 [插件市场链接](https://marketplace.visualstudio.com/items?itemName=jyuhou-wong.hexo-github) 进行安装。
+2. **下载 VSIX 文件**: 前往 [发布页面](https://github.com/jyuhou-wong/hexo-github/releases) 下载最新的 VSIX 文件。
+3. **安装插件**:
    - 在 VSCode 中，打开扩展视图（`Ctrl+Shift+X`）。
    - 点击右上角的三个点，选择 **Install from VSIX...**，然后选择下载的 VSIX 文件。
 
@@ -88,6 +89,11 @@ Hexo-GitHub 是一个 VSCode 插件，专注于通过直观的可视化操作简
 ## Change Log
 
 All notable changes to the "hexo-github" extension will be documented in this file.
+
+### [2.0.10] - 2024-10-29
+
+#### Added
+- Updated installation instructions to include marketplace installation option.
 
 ### [2.0.9] - 2024-10-29
 
