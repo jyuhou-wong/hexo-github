@@ -1,15 +1,15 @@
 {
   "name": "hexo-github",
-  "displayName": "hexo-github",
+  "displayName": "HEXO GITHUB",
   "description": "A VSCode extension for managing Hexo blogs with GitHub integration.",
-  "version": "2.0.6",
-  "publisher": "Jyuhou Huang 黄宇豪 <jyuhou.wong@gmail.com>",
+  "version": "2.0.7",
+  "publisher": "Jyuhou Wong",
   "repository": {
     "type": "git",
     "url": "https://github.com/jyuhou-wong/hexo-github.git"
   },
   "homepage": "https://blog.hyh.ltd",
-  "author": "Jyuhou Huang 黄宇豪 <jyuhou.wong@gmail.com>",
+  "author": "Jyuhou Wong 黄宇豪 <jyuhou.wong@gmail.com>",
   "engines": {
     "vscode": "^1.74.0"
   },
