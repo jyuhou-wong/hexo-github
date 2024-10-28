@@ -1,8 +1,9 @@
 {
   "name": "hexo-github",
-  "displayName": "Hexo Github",
-  "description": "A VSCode extension for managing Hexo blogs with GitHub integration.",
-  "version": "2.0.8",
+  "displayName": "Hexo GitHub",
+  "description": "A VSCode extension for managing Hexo blogs with seamless GitHub integration and intuitive visual operations.",
+  "version": "2.0.9",
+  "icon": "icon.png",
   "publisher": "jyuhou-wong",
   "repository": {
     "type": "git",
@@ -14,7 +15,19 @@
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Productivity",
+    "Utilities"
+  ],
+  "keywords": [
+    "hexo",
+    "github",
+    "vscode",
+    "blog",
+    "extension",
+    "markdown",
+    "git",
+    "web development"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -39,7 +52,7 @@
     "viewsWelcome": [
       {
         "view": "hexo-github-blogs",
-        "contents": "Not logged in, please login github first.\n[Login to Github](command:hexo-github.loginToGitHub)",
+        "contents": "Not logged in, please login to GitHub first.\n[Login to GitHub](command:hexo-github.loginToGitHub)",
         "when": "!hexo-github.isLogin"
       }
     ],
@@ -86,7 +99,7 @@
       },
       {
         "command": "hexo-github.pushHexo",
-        "title": "Push to Github",
+        "title": "Push to GitHub",
         "icon": {
           "dark": "resources/dark/hexo-github-push.svg",
           "light": "resources/light/hexo-github-push.svg"
