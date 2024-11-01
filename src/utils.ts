@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from "fs";
 import { readdir, readFile } from "fs/promises";
-import { basename, join } from "path";
+import { basename, extname, join } from "path";
 import { promisify } from "util";
 import { exec } from "child_process";
 import minimist from "minimist";
@@ -539,6 +539,7 @@ export const searchNpmPackages = async (
  * @returns A promise that resolves to an array of TreeItem representing the themes.
  */
 export const getThemesInThemesDir = async (
+  userName: string,
   siteName: string,
   workspaceRoot: string,
   parent: TreeItem,
@@ -559,6 +560,7 @@ export const getThemesInThemesDir = async (
         name
       );
       const item = new TreeItem(
+        userName,
         siteName,
         name,
         TreeItemCollapsibleState.None,
@@ -585,6 +587,7 @@ export const getThemesInThemesDir = async (
  * @returns An array of TreeItem representing the themes found in package.json.
  */
 export const getThemesInPackageJson = (
+  userName: string,
   siteName: string,
   workspaceRoot: string,
   parent: TreeItem,
@@ -604,6 +607,7 @@ export const getThemesInPackageJson = (
     const themeName = moduleName.replace(/^hexo-theme-/, "");
     const uri = getThemeConfig(workspaceRoot, Uri.file(themeDir), themeName);
     const item = new TreeItem(
+      userName,
       siteName,
       themeName,
       vscode.TreeItemCollapsibleState.None,
@@ -712,6 +716,61 @@ export const initSourceItem = (sourceDir: string, items: string[]) => {
     if (!existsSync(itemDir)) {
       mkdirSync(itemDir);
       vscode.window.showInformationMessage(`Created folder: "${item}"`);
+    }
+  }
+};
+
+/**
+ * Recursively replaces the last occurrence of specific patterns in HTML anchor tags in files of a specified type within a given directory.
+ * @param dirPath - The directory path to search in.
+ * @param fileType - The file extension to filter files (e.g., '.html').
+ * @param regex - The regular expression used to find matches.
+ * @param replacement - The replacement string, which can use $1, $2, etc. for matched groups.
+ */
+export const replaceLastInHtmlLinks = (
+  dirPath: string,
+  fileType: string,
+  regex: RegExp,
+  replacement: string
+) => {
+  // Check if the directory exists
+  if (!existsSync(dirPath)) {
+    console.error(`Directory "${dirPath}" does not exist.`);
+    return;
+  }
+
+  // Read all items in the directory
+  const items = readdirSync(dirPath);
+
+  // Loop through each item
+  for (const item of items) {
+    const itemPath = join(dirPath, item);
+    const stat = statSync(itemPath);
+
+    if (stat.isDirectory()) {
+      // If the item is a directory, recurse into it
+      replaceLastInHtmlLinks(itemPath, fileType, regex, replacement);
+    } else if (extname(item) === fileType) {
+      // If the item is a file of the specified type, read and replace content
+      const content = readFileSync(itemPath, "utf-8");
+
+      // Find the last match of the regex
+      const matches = [...content.matchAll(regex)];
+      if (matches.length > 0) {
+        const lastMatch = matches[matches.length - 1];
+        const lastMatchIndex = lastMatch.index!;
+
+        // Replace only the last occurrence
+        const newContent =
+          content.slice(0, lastMatchIndex) +
+          content.slice(lastMatchIndex).replace(regex, replacement);
+
+        // Only write back if there are changes
+        if (content !== newContent) {
+          writeFileSync(itemPath, newContent, "utf-8");
+          console.log(`Updated: ${itemPath}`);
+        }
+      }
     }
   }
 };

@@ -26,8 +26,10 @@ import {
 import {
   checkRepoExists,
   deleteRemoteRepo,
-  getOctokitInstance,
+  getUserOctokitInstance,
   initializeSite,
+  localAccessToken,
+  localUsername,
   pushHexo,
   pushToGitHubPages,
 } from "../services/githubService";
@@ -173,8 +175,6 @@ export const createNewBlogPost = async (
     vscode.window.showInformationMessage(
       `Blog ${basename(path)} created and opened for editing.`
     );
-
-    await revealItem(Uri.file(postPath), context);
   } catch (error) {
     handleError(error, "Failed to create new blog");
   }
@@ -250,7 +250,6 @@ export const publishDraft = async (
     );
 
     await openFile(postPath);
-    revealItem(Uri.file(postPath), context);
 
     vscode.window.showInformationMessage(`Successfully published ${name}`);
   } catch (error) {
@@ -446,18 +445,26 @@ export const addSite = async (
     const siteName = await promptForName("Please enter the site name");
     if (!siteName) return;
 
-    const octokit = await getOctokitInstance();
+    const octokit = await getUserOctokitInstance(localAccessToken);
     const repoExists = await checkRepoExists(octokit, siteName);
 
     if (repoExists) {
       throw Error(`Site "${siteName}" already exists on github.`);
     }
 
-    const siteDir = join(EXT_HOME_DIR, siteName);
+    if (!localUsername) {
+      throw Error("Not login in, Please log in first.");
+    }
+
+    const siteDir = join(EXT_HOME_DIR, localUsername, siteName);
 
     await initializeSite(siteDir);
     refreshBlogsProvider(context);
-    await pushToGitHubPages({ siteDir, siteName } as TreeItem);
+    await pushToGitHubPages({
+      userName: localUsername,
+      siteDir,
+      siteName,
+    } as TreeItem);
     await pushHexo(context);
   } catch (error) {
     handleError(error);
@@ -468,7 +475,7 @@ export const deleteSite = async (
   element: TreeItem,
   context: vscode.ExtensionContext
 ): Promise<boolean> => {
-  const { siteName, siteDir, label } = element;
+  const { userName, siteName, siteDir, label } = element;
 
   // Ask for user confirmation
   const confirmation = await vscode.window.showWarningMessage(
@@ -491,11 +498,8 @@ export const deleteSite = async (
     }
   }
 
-  const octokit = await getOctokitInstance();
+  const octokit = await getUserOctokitInstance(localAccessToken);
   const repoExists = await checkRepoExists(octokit, siteName);
-
-  const { data: user } = await octokit.rest.users.getAuthenticated();
-  const loginName = user.login;
 
   if (repoExists) {
     const confirmation = await vscode.window.showWarningMessage(
@@ -507,7 +511,7 @@ export const deleteSite = async (
 
     if (confirmation === "Delete") {
       try {
-        await deleteRemoteRepo(octokit, loginName, siteName);
+        await deleteRemoteRepo(octokit, userName, siteName);
       } catch (error) {
         handleError(error, `Error deleting "${label}" theme config.`);
       }

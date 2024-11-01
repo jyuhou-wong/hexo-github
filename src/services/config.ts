@@ -31,3 +31,11 @@ export const STARTER_REPO_ZIP_URL =
 
 // Required Modules
 export const REQUIRED_MODULES = ["hexo-server-live"];
+
+// Copyright Replace
+export const EXT_GIT = "https://github.com/jyuhou-wong/hexo-github";
+export const EXT_NAME = "Hexo GitHub";
+
+export const COPYRIGHT_SEARCH_REGEX =
+  /(<a[^>]+?href=")(https?:\/\/)?hexo\.io\/?("[^>]*>)Hexo(<\/a>)/ig;
+export const COPYRIGHT_REPLACE_STRING = `$1${EXT_GIT}$3${EXT_NAME}$4`;

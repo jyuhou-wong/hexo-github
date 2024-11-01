@@ -126,11 +126,17 @@ export const handleCreateFile = async (
 
   if (type === "Page") {
     path = join(hexo.source_dir, parentPath || name, "index.md");
-    if (existsSync(path)) throw new Error(`Page ${name} already exists`);
+    if (existsSync(path)) {
+      await openFile(path);
+      throw new Error(`Page ${name} already exists`);
+    }
     await hexoExec(siteDir, `new page "${name}"`);
   } else if (type === "Draft") {
     path = join(hexo.source_dir, DRAFTS_DIRNAME, `${name}.md`);
-    if (existsSync(path)) throw new Error(`Draft ${name} already exists`);
+    if (existsSync(path)) {
+      await openFile(path);
+      throw new Error(`Draft ${name} already exists`);
+    }
     await hexoExec(siteDir, `new draft "${name}"`);
   } else {
     // Assume it's a Blog
@@ -143,12 +149,10 @@ export const handleCreateFile = async (
     path = join(parentPath ?? postDir, `${name}.md`);
     if (existsSync(path)) {
       await openFile(path);
-      await revealItem(Uri.file(path), context);
       throw new Error(`Blog ${name} already exists`);
     }
     await hexoExec(siteDir, `new --path "${relativePath}/${name}"`);
   }
 
   await openFile(path);
-  await revealItem(Uri.file(path), context);
 };

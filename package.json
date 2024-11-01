@@ -2,7 +2,7 @@
   "name": "hexo-github",
   "displayName": "Hexo GitHub",
   "description": "A VSCode extension for managing Hexo blogs with seamless GitHub integration and intuitive visual operations.",
-  "version": "2.0.10",
+  "version": "2.0.11",
   "icon": "icon.png",
   "publisher": "jyuhou-wong",
   "repository": {
@@ -87,6 +87,14 @@
       {
         "command": "hexo-github.loginToGitHub",
         "title": "Login to GitHub"
+      },
+      {
+        "command": "hexo-github.logoutFromGitHub",
+        "icon": {
+          "dark": "resources/dark/hexo-github-logout.svg",
+          "light": "resources/light/hexo-github-logout.svg"
+        },
+        "title": "Logout from GitHub"
       },
       {
         "command": "hexo-github.pullHexo",
@@ -207,6 +215,11 @@
           "group": "navigation"
         },
         {
+          "command": "hexo-github.logoutFromGitHub",
+          "when": "view == hexo-github-blogs && hexo-github.isLogin",
+          "group": "navigation"
+        },
+        {
           "command": "hexo-github.openSourceGit",
           "when": "view == hexo-github-blogs && hexo-github.isLogin",
           "group": "navigation"
@@ -314,6 +327,7 @@
     "vsce": "^2.15.0"
   },
   "dependencies": {
+    "@octokit/auth-oauth-app": "^8.1.1",
     "@octokit/rest": "^21.0.2",
     "axios": "^1.7.7",
     "chokidar": "^3.6.0",

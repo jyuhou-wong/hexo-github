@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import {
   loginToGitHub,
+  logoutFromGitHub,
   openPage,
   openPageRepository,
   openSourceRepository,
@@ -25,6 +26,7 @@ import { TreeItem } from "../providers/blogsTreeDataProvider";
 const commands = [
   { command: "hexo-github.deploy", callback: deployBlog },
   { command: "hexo-github.loginToGitHub", callback: loginToGitHub },
+  { command: "hexo-github.logoutFromGitHub", callback: logoutFromGitHub },
   { command: "hexo-github.pullHexo", callback: pullHexoRepository },
   { command: "hexo-github.pushHexo", callback: pushHexoRepository },
   { command: "hexo-github.openSourceGit", callback: openSourceRepository },
@@ -41,7 +43,8 @@ const commands = [
   { command: "hexo-github.addTheme", callback: addTheme },
   {
     command: "hexo-github.refreshTreeview",
-    callback: (element: TreeItem, context: vscode.ExtensionContext) => refreshBlogsProvider(context),
+    callback: (element: TreeItem, context: vscode.ExtensionContext) =>
+      refreshBlogsProvider(context),
   },
 ];
 

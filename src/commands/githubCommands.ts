@@ -1,10 +1,14 @@
 import * as vscode from "vscode";
 import {
+  localAccessToken,
+  localUsername,
   openDatabaseGit,
   openPageGit,
   openUserPage,
   pullHexo,
   pushHexo,
+  removeAccessToken,
+  revokeAccessToken,
   startOAuthLogin,
 } from "../services/githubService";
 import { executeWithFeedback } from "../utils";
@@ -17,6 +21,18 @@ export const loginToGitHub = async (
 ) => {
   await startOAuthLogin();
 };
+
+// Log out to GitHub
+export const logoutFromGitHub = async (
+  element: TreeItem,
+  context: vscode.ExtensionContext
+) => {
+  // 向github请求吊销令牌
+  await revokeAccessToken(localAccessToken);
+  // 清除本地touken
+  await removeAccessToken(localUsername);
+};
+
 
 // Pull Hexo repository
 export const pullHexoRepository = async (

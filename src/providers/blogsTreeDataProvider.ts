@@ -21,12 +21,13 @@ import { getHexoConfig } from "../services/hexoService";
 import { existsSync, statSync } from "fs";
 import { FSWatcher, watch } from "chokidar";
 import { getThemesInPackageJson, getThemesInThemesDir } from "../utils";
-import { accessToken } from "../services/githubService";
+import { localAccessToken, localUsername } from "../services/githubService";
 
 // Define the TreeItem class which represents each item in the tree
 export class TreeItem extends vscode.TreeItem {
   public siteDir: string = "";
   constructor(
+    public readonly userName: string,
     public readonly siteName: string,
     public readonly label: string, // Label to display in the tree
     public readonly collapsibleState: vscode.TreeItemCollapsibleState, // State indicating whether the item can be expanded
@@ -34,7 +35,7 @@ export class TreeItem extends vscode.TreeItem {
     public readonly uri?: Uri
   ) {
     super(label, collapsibleState);
-    this.siteDir = join(EXT_HOME_DIR, siteName);
+    this.siteDir = join(EXT_HOME_DIR, userName, siteName);
   }
 }
 
@@ -73,61 +74,58 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
 
   // Get the children of a specified TreeItem
   async getChildren(element?: TreeItem): Promise<TreeItem[]> {
-    if (!accessToken) {
+    if (!localAccessToken || !localUsername) {
       return [];
     }
 
     if (!this.sourceDirs.size) {
-      await this.setSourceDirs(EXT_HOME_DIR); // Ensure source directory is set
+      await this.setSourceDirs(EXT_HOME_DIR, localUsername); // Ensure source directory is set
     }
 
-    const siteName = element?.siteName;
+    const { userName, siteName } = element ?? {};
 
-    if (!siteName) {
-      return await this.getRootItems(EXT_HOME_DIR);
+    if (!siteName || !userName) {
+      return await this.getRootItems(EXT_HOME_DIR, localUsername);
     }
 
     if (element?.collapsibleState === 0) {
       return [];
     }
 
+    // 防止新增站点没有缓存
+    if (!this.sourceDirs.get(siteName)) {
+      await this.setSourceDirs(EXT_HOME_DIR, userName); // Ensure source directory is set
+    }
+
     if (element?.contextValue == "posts") {
       // If the element is the posts directory, get its children
       const postsDir = join(this.sourceDirs.get(siteName)!, POSTS_DIRNAME);
-      return await this.getItems(siteName, postsDir, element);
+      return await this.getItems(postsDir, element);
     }
 
     if (element?.contextValue == "drafts") {
       // If the element is the drafts directory, get its children
       const draftsDir = join(this.sourceDirs.get(siteName)!, DRAFTS_DIRNAME);
-      return await this.getItems(siteName, draftsDir, element);
+      return await this.getItems(draftsDir, element);
     }
 
     if (element?.contextValue == "themes") {
       // If the element is the themes directory, get its children
-      return await this.getThemes(siteName, element.siteDir, element);
+      return await this.getThemes(element);
     }
 
     if (element?.contextValue == "pages") {
       // If the element is the main pages label, get the pages
-      return await this.getPages(
-        siteName,
-        this.sourceDirs.get(siteName)!,
-        element
-      );
+      return await this.getPages(this.sourceDirs.get(siteName)!, element);
     }
 
     if (element?.contextValue == "site") {
-      return await this.getSite(
-        siteName,
-        this.sourceDirs.get(siteName)!,
-        element
-      );
+      return await this.getSite(this.sourceDirs.get(siteName)!, element);
     }
 
     if (element?.uri) {
       // If the element has a resource URI, get its children
-      return await this.getItems(siteName, element.uri.fsPath, element);
+      return await this.getItems(element.uri.fsPath, element);
     }
 
     return [];
@@ -138,19 +136,24 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   // Get the root items for the tree
-  private async getRootItems(rootDir: string): Promise<TreeItem[]> {
+  private async getRootItems(
+    rootDir: string,
+    localUsername: string
+  ): Promise<TreeItem[]> {
     try {
-      const dirents = await readdir(rootDir, { withFileTypes: true }); // Read directory entries
+      const siteDir = join(rootDir, localUsername);
+      const dirents = await readdir(siteDir, { withFileTypes: true }); // Read directory entries
       const items = dirents
         .filter(
           (v) =>
-            statSync(join(rootDir, v.name)).isDirectory() && v.name !== ".git"
+            statSync(join(siteDir, v.name)).isDirectory() && v.name !== ".git"
         )
         .map((dirent) => {
           const siteName = dirent.name; // Get label for the directory
-          const uri = Uri.file(join(rootDir, siteName));
+          const uri = Uri.file(join(siteDir, siteName));
           const collapsibleState = TreeItemCollapsibleState.Collapsed;
           const item = new TreeItem(
+            localUsername,
             siteName,
             siteName,
             collapsibleState,
@@ -168,10 +171,10 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   private async getSite(
-    siteName: string,
     rootDir: string,
     parent: TreeItem
   ): Promise<TreeItem[]> {
+    const { userName, siteName } = parent;
     try {
       const dirents = await readdir(rootDir, { withFileTypes: true }); // Read directory entries
       const items = dirents
@@ -184,6 +187,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
               ? TreeItemCollapsibleState.Expanded
               : TreeItemCollapsibleState.Collapsed; // Set collapsible state
           const item = new TreeItem(
+            userName,
             siteName,
             label,
             collapsibleState,
@@ -195,6 +199,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
         });
 
       const pages = new TreeItem(
+        userName,
         siteName,
         BlogsTreeDataProvider.getLabel(),
         TreeItemCollapsibleState.Expanded,
@@ -203,6 +208,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
       pages.contextValue = "pages";
 
       const themes = new TreeItem(
+        userName,
         siteName,
         BlogsTreeDataProvider.getLabel(STARTER_THEMES_DIRNAME),
         TreeItemCollapsibleState.Collapsed,
@@ -211,9 +217,10 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
       themes.contextValue = "themes";
 
       const configUri = Uri.file(
-        join(EXT_HOME_DIR, siteName, HEXO_CONFIG_NAME)
+        join(EXT_HOME_DIR, userName, siteName, HEXO_CONFIG_NAME)
       );
       const config = new TreeItem(
+        userName,
         siteName,
         BlogsTreeDataProvider.getLabel(HEXO_CONFIG_NAME),
         TreeItemCollapsibleState.None,
@@ -240,13 +247,21 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
     }
   }
 
-  private async getThemes(
-    siteName: string,
-    dir: string,
-    parent: TreeItem
-  ): Promise<TreeItem[]> {
-    const localThemes = await getThemesInThemesDir(siteName, dir, parent);
-    const npmThemes = await getThemesInPackageJson(siteName, dir, parent);
+  private async getThemes(parent: TreeItem): Promise<TreeItem[]> {
+    const { userName, siteName, siteDir } = parent;
+
+    const localThemes = await getThemesInThemesDir(
+      userName,
+      siteName,
+      siteDir,
+      parent
+    );
+    const npmThemes = await getThemesInPackageJson(
+      userName,
+      siteName,
+      siteDir,
+      parent
+    );
 
     // Create an object from local themes for easy lookup
     const localThemesObject = Object.fromEntries(
@@ -269,11 +284,9 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   // Get the pages under a specific directory
-  private async getPages(
-    siteName: string,
-    dir: string,
-    parent: TreeItem
-  ): Promise<TreeItem[]> {
+  private async getPages(dir: string, parent: TreeItem): Promise<TreeItem[]> {
+    const { userName, siteName } = parent;
+
     try {
       const dirents = await readdir(dir, { withFileTypes: true }); // Read directory entries
       const items = dirents
@@ -291,6 +304,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
           const label = dirent.name; // Use the directory name as the label
           const collapsibleState = TreeItemCollapsibleState.None; // Set as non-collapsible
           const item = new TreeItem(
+            userName,
             siteName,
             label,
             collapsibleState,
@@ -316,15 +330,13 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   // Get items (files and directories) under a specified path
-  private async getItems(
-    siteName: string,
-    path: string,
-    parent: TreeItem
-  ): Promise<TreeItem[]> {
+  private async getItems(dir: string, parent: TreeItem): Promise<TreeItem[]> {
+    const { userName, siteName } = parent;
+
     try {
-      const dirents = await readdir(path, { withFileTypes: true }); // Read directory entries
+      const dirents = await readdir(dir, { withFileTypes: true }); // Read directory entries
       const items = dirents.map((dirent) => {
-        const fullPath = join(path, dirent.name); // Full path to the item
+        const fullPath = join(dir, dirent.name); // Full path to the item
         const uri = Uri.file(fullPath); // Create a URI for the item
         const isDirectory = statSync(uri.fsPath).isDirectory(); // Check if it is a directory
 
@@ -337,6 +349,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
           : TreeItemCollapsibleState.None; // Non-collapsible for files
 
         const item = new TreeItem(
+          userName,
           siteName,
           label,
           collapsibleState,
@@ -417,7 +430,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
       this.sourceDirs.clear(); // 清楚source
       this.uriCache.clear(); // 清除缓存
       this._onDidChangeTreeData.fire(); // 通知数据已更改
-    }, 300); // 300 毫秒的防抖延迟
+    }, 100); // 100 毫秒的防抖延迟
   }
 
   dispose(): void {
@@ -446,17 +459,18 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
     return watcher;
   }
 
-  private async setSourceDirs(rootDir: string) {
-    const dirents = await readdir(rootDir, { withFileTypes: true }); // Read directory entries
+  private async setSourceDirs(rootDir: string, userName: string) {
+    const userDir = join(rootDir, userName);
+    const dirents = await readdir(userDir, { withFileTypes: true }); // Read directory entries
     for (const dirent of dirents) {
       if (
-        !statSync(join(rootDir, dirent.name)).isDirectory() ||
+        !statSync(join(userDir, dirent.name)).isDirectory() ||
         dirent.name == ".git"
       ) {
         continue;
       }
       const siteName = dirent.name;
-      const siteDir = join(rootDir, dirent.name);
+      const siteDir = join(userDir, dirent.name);
       const config = await getHexoConfig(siteDir); // Get Hexo configuration
       const sourceDir = join(siteDir, config.source_dir);
       this.sourceDirs.set(siteName, sourceDir); // Start watching the source directory

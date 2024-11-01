@@ -15,21 +15,30 @@ import {
   STARTER_REPO_ZIP_URL,
   EXT_CONFIG_PATH,
   EXT_HOME_DIR,
+  COPYRIGHT_REPLACE_STRING,
+  COPYRIGHT_SEARCH_REGEX,
 } from "./config";
 import { hexoExec, initializeHexo } from "./hexoService";
-import { handleError, installNpmModules, refreshBlogsProvider } from "../utils";
+import {
+  handleError,
+  installNpmModules,
+  refreshBlogsProvider,
+  replaceLastInHtmlLinks,
+} from "../utils";
 import { TreeItem } from "../providers/blogsTreeDataProvider";
 
-export let accessToken: string | null = "";
+export let localUsername: string = "";
+export let localAccessToken: string = "";
 
 // 确保插件用户目录存在
 if (!fs.existsSync(EXT_HOME_DIR)) {
   fs.mkdirSync(EXT_HOME_DIR, { recursive: true });
 }
 
-// 定义接口
 interface Config {
-  accessToken: string | null;
+  [userName: string]: {
+    accessToken?: string;
+  };
 }
 
 interface EnableGitHubPagesParams {
@@ -47,32 +56,92 @@ interface EnableGitHubPagesHttps {
 }
 
 // 加载访问令牌
-export const loadAccessToken = (): string | null => {
-  let config: Config = { accessToken: null };
+export const loadAccessToken = async (): Promise<string | undefined> => {
+  let config: Config = {};
+
   if (fs.existsSync(EXT_CONFIG_PATH)) {
     const rawData = fs.readFileSync(EXT_CONFIG_PATH, "utf8");
     try {
-      config = JSON.parse(rawData) as Config;
+      config = JSON.parse(rawData);
     } catch (error) {
       handleError(error, "Error parsing config file");
     }
   }
 
-  if (!accessToken && config.accessToken) {
-    vscode.commands.executeCommand("setContext", "hexo-github.isLogin", true);
-    vscode.commands.executeCommand("hexo-github.refreshTreeview").then(() => {
-      vscode.commands.executeCommand("hexo-github.pullHexo");
-    });
-    accessToken = config.accessToken;
+  const users = Object.keys(config);
+  const userName = users.length ? users[0] : null;
+
+  if (!userName) {
+    return;
   }
 
-  return config.accessToken;
+  const userConfig = config[userName];
+
+  const { accessToken } = userConfig;
+
+  if (!accessToken) {
+    return;
+  }
+
+  const latestName = await getLoginName(accessToken);
+
+  if (!latestName) {
+    removeAccessToken(userName);
+    return;
+  }
+
+  saveAccessToken(latestName, accessToken);
+
+  return accessToken; // 如果没有访问令牌，返回 null
 };
 
 // 保存访问令牌
-const saveAccessToken = (accessToken: string): void => {
-  const config: Config = { accessToken };
-  fs.writeFileSync(EXT_CONFIG_PATH, JSON.stringify(config), "utf8");
+export const saveAccessToken = (
+  userName: string,
+  accessToken: string
+): void => {
+  let config: Config = {
+    [userName]: { accessToken },
+  };
+  fs.writeFileSync(EXT_CONFIG_PATH, JSON.stringify(config, null, 2), "utf8");
+
+  // 保存token同时创建对应用户目录
+  const userDir = path.join(EXT_HOME_DIR, userName);
+  if (!fs.existsSync(userDir)) {
+    fs.mkdirSync(userDir, { recursive: true });
+  }
+
+  localUsername = userName;
+  localAccessToken = accessToken;
+  vscode.commands.executeCommand("setContext", "hexo-github.isLogin", true);
+  vscode.commands
+    .executeCommand("hexo-github.refreshTreeview")
+    .then(() => vscode.commands.executeCommand("hexo-github.pullHexo"));
+};
+
+// 移除访问令牌
+export const removeAccessToken = (userName: string) => {
+  let config: Config = {};
+
+  if (fs.existsSync(EXT_CONFIG_PATH)) {
+    const rawData = fs.readFileSync(EXT_CONFIG_PATH, "utf8");
+    try {
+      config = JSON.parse(rawData);
+    } catch (error) {
+      handleError(error, "Error parsing config file");
+    }
+  }
+
+  if (config[userName]) {
+    delete config[userName];
+    fs.writeFileSync(EXT_CONFIG_PATH, JSON.stringify(config, null, 2), "utf8");
+  }
+
+  localUsername = "";
+  localAccessToken = "";
+
+  vscode.commands.executeCommand("setContext", "hexo-github.isLogin", false);
+  vscode.commands.executeCommand("hexo-github.refreshTreeview");
 };
 
 // OAuth 登录
@@ -95,9 +164,13 @@ export const startOAuthLogin = async (): Promise<void> => {
       );
 
       if (data.access_token) {
-        saveAccessToken(data.access_token);
+        const octokit = await getUserOctokitInstance(data.access_token);
 
-        const loginName = await getLoginName();
+        const { data: user } = await octokit.rest.users.getAuthenticated();
+        const loginName = user.login;
+
+        saveAccessToken(loginName, data.access_token);
+
         vscode.window.showInformationMessage(`Logged in as ${loginName}`);
 
         res.send("Login successful! You can close this window.");
@@ -118,21 +191,62 @@ export const startOAuthLogin = async (): Promise<void> => {
   });
 };
 
-// 获取 Octokit 实例
-export const getOctokitInstance = async (): Promise<any> => {
-  const token = loadAccessToken();
-  if (!token) {
+// 吊销令牌
+export const revokeAccessToken = async (
+  access_token: string
+): Promise<void> => {
+  const octokit = await getAppOctokitInstance();
+
+  try {
+    // 吊销当前访问令牌
+    const response = await octokit.rest.apps.deleteToken({
+      client_id: GITHUB_CLIENT_ID,
+      access_token,
+    });
+    vscode.window.showInformationMessage("Token revoked successfully.");
+  } catch (error) {
+    handleError(error, "Error revoking token");
+  }
+};
+
+// 获取 User Octokit 实例
+export const getUserOctokitInstance = async (
+  accessToken: string
+): Promise<any> => {
+  if (!accessToken) {
     throw new Error("Access token is not set. Please log in first.");
   }
   const { Octokit } = await import("@octokit/rest");
-  return new Octokit({ auth: token });
+  return new Octokit({ auth: accessToken });
 };
 
-// 获取登录名
-export const getLoginName = async (): Promise<string> => {
-  const octokit = await getOctokitInstance();
-  const { data: user } = await octokit.rest.users.getAuthenticated();
-  return user.login;
+// 获取 App Octokit 实例
+export const getAppOctokitInstance = async (): Promise<any> => {
+  const { Octokit } = await import("@octokit/rest");
+  const { createOAuthAppAuth } = await import("@octokit/auth-oauth-app");
+  return new Octokit({
+    authStrategy: createOAuthAppAuth,
+    auth: {
+      clientType: "oauth-app",
+      clientId: GITHUB_CLIENT_ID,
+      clientSecret: GITHUB_CLIENT_SECRET,
+    },
+  });
+};
+
+//
+export const getLoginName = async (
+  accessToken: string
+): Promise<string | undefined> => {
+  const octokit = await getUserOctokitInstance(accessToken);
+  try {
+    const { data: user } = await octokit.rest.users.getAuthenticated();
+    return user.login;
+  } catch (error) {
+    // 不抛出错误直接返回
+    console.error(error);
+    return;
+  }
 };
 
 // 检查仓库是否存在
@@ -267,9 +381,9 @@ export const pushHexo = async (
   context: vscode.ExtensionContext
 ): Promise<void> => {
   await pullHexo(context);
-  const git = simpleGit(EXT_HOME_DIR);
+  const git = simpleGit(path.join(EXT_HOME_DIR, localUsername));
   await git.add(".");
-  await git.commit("feat: update hexo database");
+  await git.commit("Update by https://github.com/jyuhou-wong/hexo-github");
   await git.push("origin", "main");
   vscode.window.showInformationMessage(
     "Pushed to hexo-github-db successfully."
@@ -280,10 +394,11 @@ export const pushHexo = async (
 export const pullHexo = async (
   context: vscode.ExtensionContext
 ): Promise<void> => {
-  const octokit = await getOctokitInstance();
+  const octokit = await getUserOctokitInstance(localAccessToken);
   const repoExists = await checkRepoExists(octokit, "hexo-github-db");
-  const git = simpleGit(EXT_HOME_DIR);
-  const localRepoExists = fs.existsSync(path.join(EXT_HOME_DIR, ".git"));
+  const userDir = path.join(EXT_HOME_DIR, localUsername);
+  const git = simpleGit(userDir);
+  const localRepoExists = fs.existsSync(path.join(userDir, ".git"));
 
   if (repoExists) {
     await handleExistingRepo(git, localRepoExists);
@@ -324,9 +439,8 @@ const initializeLocalRepo = async (git: SimpleGit): Promise<void> => {
   await git.init();
   await checkoutBranch(git);
   await git.add(".");
-  await git.commit("feat: update hexo database");
-  const loginName = await getLoginName();
-  const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${loginName}/hexo-github-db.git`;
+  await git.commit("Update by https://github.com/jyuhou-wong/hexo-github");
+  const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${localUsername}/hexo-github-db.git`;
   await git.addRemote("origin", remoteUrl);
   await git.pull("origin", "main", [
     "--allow-unrelated-histories",
@@ -356,26 +470,24 @@ const handleNonExistingRepo = async (
 
 // 创建本地仓库
 const createLocalRepo = async (octokit: any, git: SimpleGit): Promise<void> => {
-  const { data: user } = await octokit.rest.users.getAuthenticated();
-  const loginName = user.login;
   await git.init();
 
-  const readmePath = path.join(EXT_HOME_DIR, "README.md");
+  const readmePath = path.join(EXT_HOME_DIR, localUsername, "README.md");
   fs.writeFileSync(
     readmePath,
     "# Hexo GitHub Pages Repository\n\nThis is my blog released by using [hexo-github](https://github.com/jyuhou-wong/hexo-github) vscode extensions."
   );
 
-  const gitignorePath = path.join(EXT_HOME_DIR, ".gitignore");
+  const gitignorePath = path.join(EXT_HOME_DIR, localUsername, ".gitignore");
   fs.writeFileSync(gitignorePath, "node_modules/\npublic/");
 
   await git.add(".");
   await git.commit("Initial repository");
 
-  const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${loginName}/hexo-github-db.git`;
+  const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${localUsername}/hexo-github-db.git`;
   await git.addRemote("origin", remoteUrl);
   await checkoutBranch(git);
-  await createUserPageRepoIfNeeded(loginName);
+  await createUserPageRepoIfNeeded(localUsername);
   await createRemoteRepo(octokit, "hexo-github-db");
   await git.push("origin", "main");
 };
@@ -383,10 +495,11 @@ const createLocalRepo = async (octokit: any, git: SimpleGit): Promise<void> => {
 // 检查并创建用户页面仓库
 const createUserPageRepoIfNeeded = async (loginName: string): Promise<void> => {
   const userPageRepoName = `${loginName}.github.io`;
-  const userPageDir = path.join(EXT_HOME_DIR, userPageRepoName);
+  const userPageDir = path.join(EXT_HOME_DIR, localUsername, userPageRepoName);
   if (!fs.existsSync(userPageDir)) {
     await initializeSite(userPageDir);
     await pushToGitHubPages({
+      userName: localUsername,
       siteDir: userPageDir,
       siteName: userPageRepoName,
     } as TreeItem);
@@ -405,13 +518,12 @@ const checkoutBranch = async (git: SimpleGit): Promise<void> => {
 
 // Push to GitHub Pages
 export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
-  const { siteDir, siteName } = element;
+  const { userName, siteDir, siteName } = element;
 
-  const octokit = await getOctokitInstance();
+  const octokit = await getUserOctokitInstance(localAccessToken);
+
   const hexo = await initializeHexo(siteDir);
   const publicDir = hexo.public_dir;
-
-  const loginName = await getLoginName();
 
   const repoExists = await checkRepoExists(octokit, siteName);
 
@@ -432,7 +544,7 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
   const localRepoExists = fs.existsSync(path.join(publicDir, ".git"));
   if (!localRepoExists) {
     await git.init();
-    const remoteUrl = `https://${loadAccessToken()}:x-oauth-basic@github.com/${loginName}/${siteName}.git`;
+    const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${userName}/${siteName}.git`;
     await git.addRemote("origin", remoteUrl);
 
     const branches = await git.branchLocal();
@@ -451,12 +563,21 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
 
   await hexoExec(siteDir, "generate");
 
-  const items = fs.readdirSync(EXT_HOME_DIR);
+  replaceLastInHtmlLinks(
+    publicDir,
+    ".html",
+    COPYRIGHT_SEARCH_REGEX,
+    COPYRIGHT_REPLACE_STRING
+  );
+
+  const userDir = path.join(EXT_HOME_DIR, userName);
+
+  const items = fs.readdirSync(userDir);
 
   const excludeFiles = [".gitignore", "config.json"];
 
   items.forEach((item) => {
-    const srcItem = path.join(EXT_HOME_DIR, item);
+    const srcItem = path.join(userDir, item);
     const destItem = path.join(publicDir, item);
     if (
       !fs.statSync(srcItem).isDirectory() &&
@@ -467,20 +588,20 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
   });
 
   await git.add(".");
-  await git.commit("Deploy to GitHub Pages");
+  await git.commit("Deploy by https://github.com/jyuhou-wong/hexo-github");
   await git.push("origin", "main", { "--force": null });
 
   if (!repoExists) {
     // 启用 GitHub Pages
     await enableGitHubPages({
       octokit,
-      owner: loginName,
+      owner: userName,
       repo: siteName,
       branch: "main",
       path: "/",
     });
 
-    await enableHttps({ octokit, owner: loginName, repo: siteName });
+    await enableHttps({ octokit, owner: userName, repo: siteName });
   }
 
   vscode.window.showInformationMessage("Pushed to GitHub Pages successfully.");
@@ -488,9 +609,7 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
 
 // 打开 Hexo 数据库仓库
 export const openDatabaseGit = async (): Promise<void> => {
-  const octokit = await getOctokitInstance();
-
-  const loginName = await getLoginName();
+  const octokit = await getUserOctokitInstance(localAccessToken);
 
   const dbRepoExists = await checkRepoExists(octokit, "hexo-github-db");
 
@@ -498,7 +617,7 @@ export const openDatabaseGit = async (): Promise<void> => {
     throw new Error(`"hexo-github-db" not found`);
   }
 
-  const dbGitUrl = `https://github.com/${loginName}/hexo-github-db`;
+  const dbGitUrl = `https://github.com/${localUsername}/hexo-github-db`;
   open(dbGitUrl);
 };
 
@@ -506,7 +625,7 @@ export const openDatabaseGit = async (): Promise<void> => {
 export const openPageGit = async (element: TreeItem): Promise<void> => {
   const { siteName } = element;
 
-  const octokit = await getOctokitInstance();
+  const octokit = await getUserOctokitInstance(localAccessToken);
 
   const pageRepo = await checkRepoExists(octokit, siteName);
 
@@ -519,11 +638,9 @@ export const openPageGit = async (element: TreeItem): Promise<void> => {
 
 // 打开 GitHub Pages 网站
 export const openUserPage = async (element: TreeItem): Promise<void> => {
-  const { siteName } = element;
+  const { userName, siteName } = element;
 
-  const octokit = await getOctokitInstance();
-
-  const loginName = await getLoginName();
+  const octokit = await getUserOctokitInstance(localAccessToken);
 
   const pageRepo = await checkRepoExists(octokit, siteName);
 
@@ -531,6 +648,6 @@ export const openUserPage = async (element: TreeItem): Promise<void> => {
     throw new Error(`"${siteName}" not found`);
   }
 
-  const pageUrl = `https://${loginName}.github.io/${siteName}`;
+  const pageUrl = `https://${userName}.github.io/${siteName}`;
   open(pageUrl);
 };

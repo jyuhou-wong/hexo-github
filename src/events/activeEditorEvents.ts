@@ -7,7 +7,7 @@ export const registerActiveEditorChangeListener = (
   const disposable = vscode.window.onDidChangeActiveTextEditor((editor) => {
     if (editor) {
       // 处理逻辑
-      revealItem(editor.document.uri, context);
+      setTimeout(() => revealItem(editor.document.uri, context), 300);
     }
   });
 
