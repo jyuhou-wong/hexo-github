@@ -5,7 +5,7 @@ export const registerBlogsProvider = (context: vscode.ExtensionContext) => {
   // 创建 TreeDataProvider
   const blogsProvider = new BlogsTreeDataProvider(context);
   // 创建 TreeView
-  const blogsTreeView = vscode.window.createTreeView("hexo-github-blogs", {
+  const blogsTreeView = vscode.window.createTreeView("vscode-hexo-github-blogs", {
     treeDataProvider: blogsProvider,
   });
   // 注册资源

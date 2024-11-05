@@ -1,10 +1,10 @@
 # Hexo-GitHub VSCode Plugin
 
-[![License](https://img.shields.io/github/license/jyuhou-wong/hexo-github.svg)](https://github.com/jyuhou-wong/hexo-github/blob/master/LICENSE)
-[![Build Status](https://github.com/jyuhou-wong/hexo-github/workflows/Release/badge.svg)](https://github.com/jyuhou-wong/hexo-github/actions)
-[![Github Downloads](https://img.shields.io/github/downloads/jyuhou-wong/hexo-github/total.svg)](http://gra.caldis.me/?url=https://github.com/jyuhou-wong/hexo-github)
-<a title="Hits" target="_blank" href="https://github.com/jyuhou-wong/hexo-github"><img src="https://hits.b3log.org/jyuhou-wong/hexo-github.svg"></a>
-[![Github Release Version](https://img.shields.io/github/v/release/jyuhou-wong/hexo-github?color=green&include_prereleases)](https://github.com/jyuhou-wong/hexo-github/releases/latest)
+[![License](https://img.shields.io/github/license/jyuhou-wong/vscode-hexo-github.svg)](https://github.com/jyuhou-wong/vscode-hexo-github/blob/master/LICENSE)
+[![Build Status](https://github.com/jyuhou-wong/vscode-hexo-github/workflows/Release/badge.svg)](https://github.com/jyuhou-wong/vscode-hexo-github/actions)
+[![Github Downloads](https://img.shields.io/github/downloads/jyuhou-wong/vscode-hexo-github/total.svg)](http://gra.caldis.me/?url=https://github.com/jyuhou-wong/vscode-hexo-github)
+<a title="Hits" target="_blank" href="https://github.com/jyuhou-wong/vscode-hexo-github"><img src="https://hits.b3log.org/jyuhou-wong/vscode-hexo-github.svg"></a>
+[![Github Release Version](https://img.shields.io/github/v/release/jyuhou-wong/vscode-hexo-github?color=green&include_prereleases)](https://github.com/jyuhou-wong/vscode-hexo-github/releases/latest)
 
 Hexo-GitHub 是一个 VSCode 插件，专注于通过直观的可视化操作简化 Hexo 博客的管理与 GitHub 集成。用户可以通过该插件轻松地创建、更新和部署他们的 Hexo 博客。
 
@@ -29,8 +29,8 @@ Hexo-GitHub 是一个 VSCode 插件，专注于通过直观的可视化操作简
 
 ## 安装
 
-1. **从 VSCode 插件市场安装**: 在 VSCode 中搜索 “Hexo GitHub” 或访问 [插件市场链接](https://marketplace.visualstudio.com/items?itemName=jyuhou-wong.hexo-github) 进行安装。
-2. **下载 VSIX 文件**: 前往 [发布页面](https://github.com/jyuhou-wong/hexo-github/releases) 下载最新的 VSIX 文件。
+1. **从 VSCode 插件市场安装**: 在 VSCode 中搜索 “Hexo GitHub” 或访问 [插件市场链接](https://marketplace.visualstudio.com/items?itemName=jyuhou-wong.vscode-hexo-github) 进行安装。
+2. **下载 VSIX 文件**: 前往 [发布页面](https://github.com/jyuhou-wong/vscode-hexo-github/releases) 下载最新的 VSIX 文件。
 3. **安装插件**:
    - 在 VSCode 中，打开扩展视图（`Ctrl+Shift+X`）。
    - 点击右上角的三个点，选择 **Install from VSIX...**，然后选择下载的 VSIX 文件。
@@ -59,7 +59,7 @@ Hexo-GitHub 是一个 VSCode 插件，专注于通过直观的可视化操作简
 
 ### 视图和菜单
 
-![Hexo GitHub: Blogs](resources/treeview.png)
+![Hexo GitHub for VSCode: Blogs](resources/treeview.png)
 
 ## 工作原理
 
@@ -88,7 +88,12 @@ Hexo-GitHub 是一个 VSCode 插件，专注于通过直观的可视化操作简
 
 ## Change Log
 
-All notable changes to the "hexo-github" extension will be documented in this file.
+All notable changes to the "vscode-hexo-github" extension will be documented in this file.
+
+### [3.0.1] - 2024-11-05
+
+#### Refactor
+- Rename `hexo-github` to `vscode-hexo-github`.
 
 ### [2.1.1] - 2024-11-05
 

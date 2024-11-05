@@ -38,6 +38,6 @@ jobs:
           tag_name: ${{ github.ref }}
           name: Release ${{ env.RELEASE_NAME }}
           draft: false
-          files: hexo-github-*.vsix
+          files: vscode-hexo-github-*.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

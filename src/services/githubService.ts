@@ -114,10 +114,10 @@ export const saveAccessToken = (
 
   localUsername = userName;
   localAccessToken = accessToken;
-  vscode.commands.executeCommand("setContext", "hexo-github.isLogin", true);
+  vscode.commands.executeCommand("setContext", "vscode-hexo-github.isLogin", true);
   vscode.commands
-    .executeCommand("hexo-github.refreshTreeview")
-    .then(() => vscode.commands.executeCommand("hexo-github.pullHexo"));
+    .executeCommand("vscode-hexo-github.refreshTreeview")
+    .then(() => vscode.commands.executeCommand("vscode-hexo-github.pullHexo"));
 };
 
 // 移除访问令牌
@@ -141,8 +141,8 @@ export const removeAccessToken = (userName: string) => {
   localUsername = "";
   localAccessToken = "";
 
-  vscode.commands.executeCommand("setContext", "hexo-github.isLogin", false);
-  vscode.commands.executeCommand("hexo-github.refreshTreeview");
+  vscode.commands.executeCommand("setContext", "vscode-hexo-github.isLogin", false);
+  vscode.commands.executeCommand("vscode-hexo-github.refreshTreeview");
 };
 
 // OAuth 登录
@@ -387,10 +387,10 @@ export const pushHexo = async (
   await setGitUser(git);
 
   await git.add(".");
-  await git.commit("Update by https://github.com/jyuhou-wong/hexo-github");
+  await git.commit("Update by https://github.com/jyuhou-wong/vscode-hexo-github");
   await git.push("origin", "main");
   vscode.window.showInformationMessage(
-    "Pushed to hexo-github-db successfully."
+    "Pushed to vscode-hexo-github-db successfully."
   );
 };
 
@@ -399,7 +399,7 @@ export const pullHexo = async (
   context: vscode.ExtensionContext
 ): Promise<void> => {
   const octokit = await getUserOctokitInstance(localAccessToken);
-  const repoExists = await checkRepoExists(octokit, "hexo-github-db");
+  const repoExists = await checkRepoExists(octokit, "vscode-hexo-github-db");
   const userDir = path.join(EXT_HOME_DIR, localUsername);
 
   const git = simpleGit(userDir);
@@ -414,7 +414,7 @@ export const pullHexo = async (
   }
 
   vscode.window.showInformationMessage(
-    "Pulled latest changes from hexo-github-db successfully."
+    "Pulled latest changes from vscode-hexo-github-db successfully."
   );
 
   refreshBlogsProvider(context);
@@ -431,7 +431,7 @@ const handleExistingRepo = async (
       "--strategy-option=theirs",
     ]);
     vscode.window.showInformationMessage(
-      "Pulled latest changes from hexo-github-db successfully."
+      "Pulled latest changes from vscode-hexo-github-db successfully."
     );
   } else {
     await initializeLocalRepo(git);
@@ -446,8 +446,8 @@ const initializeLocalRepo = async (git: SimpleGit): Promise<void> => {
   await git.init();
   await checkoutBranch(git);
   await git.add(".");
-  await git.commit("Update by https://github.com/jyuhou-wong/hexo-github");
-  const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${localUsername}/hexo-github-db.git`;
+  await git.commit("Update by https://github.com/jyuhou-wong/vscode-hexo-github");
+  const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${localUsername}/vscode-hexo-github-db.git`;
   await git.addRemote("origin", remoteUrl);
   await git.pull("origin", "main", [
     "--allow-unrelated-histories",
@@ -463,14 +463,14 @@ const handleNonExistingRepo = async (
 ): Promise<void> => {
   if (!localRepoExists) {
     vscode.window.showInformationMessage(
-      "Remote hexo-github-db and local repository do not exist. Creating..."
+      "Remote vscode-hexo-github-db and local repository do not exist. Creating..."
     );
     await createLocalRepo(octokit, git);
   } else {
     vscode.window.showInformationMessage(
-      "Local repository exists but remote hexo-github-db does not exist. Creating..."
+      "Local repository exists but remote vscode-hexo-github-db does not exist. Creating..."
     );
-    await createRemoteRepo(octokit, "hexo-github-db");
+    await createRemoteRepo(octokit, "vscode-hexo-github-db");
     await git.push("origin", "main");
   }
 };
@@ -482,7 +482,7 @@ const createLocalRepo = async (octokit: any, git: SimpleGit): Promise<void> => {
   const readmePath = path.join(EXT_HOME_DIR, localUsername, "README.md");
   fs.writeFileSync(
     readmePath,
-    "# Hexo GitHub Pages Repository\n\nThis is my blog released by using [hexo-github](https://github.com/jyuhou-wong/hexo-github) vscode extensions."
+    "# Hexo GitHub Pages Repository\n\nThis is my blog released by using [vscode-hexo-github](https://github.com/jyuhou-wong/vscode-hexo-github) vscode extensions."
   );
 
   const gitignorePath = path.join(EXT_HOME_DIR, localUsername, ".gitignore");
@@ -491,11 +491,11 @@ const createLocalRepo = async (octokit: any, git: SimpleGit): Promise<void> => {
   await git.add(".");
   await git.commit("Initial repository");
 
-  const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${localUsername}/hexo-github-db.git`;
+  const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${localUsername}/vscode-hexo-github-db.git`;
   await git.addRemote("origin", remoteUrl);
   await checkoutBranch(git);
   await createUserPageRepoIfNeeded(localUsername);
-  await createRemoteRepo(octokit, "hexo-github-db");
+  await createRemoteRepo(octokit, "vscode-hexo-github-db");
   await git.push("origin", "main");
 };
 
@@ -599,7 +599,7 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
   });
 
   await git.add(".");
-  await git.commit("Deploy by https://github.com/jyuhou-wong/hexo-github");
+  await git.commit("Deploy by https://github.com/jyuhou-wong/vscode-hexo-github");
   await git.push("origin", "main", { "--force": null });
 
   if (!repoExists) {
@@ -622,13 +622,13 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
 export const openDatabaseGit = async (): Promise<void> => {
   const octokit = await getUserOctokitInstance(localAccessToken);
 
-  const dbRepoExists = await checkRepoExists(octokit, "hexo-github-db");
+  const dbRepoExists = await checkRepoExists(octokit, "vscode-hexo-github-db");
 
   if (!dbRepoExists) {
-    throw new Error(`"hexo-github-db" not found`);
+    throw new Error(`"vscode-hexo-github-db" not found`);
   }
 
-  const dbGitUrl = `https://github.com/${localUsername}/hexo-github-db`;
+  const dbGitUrl = `https://github.com/${localUsername}/vscode-hexo-github-db`;
   open(dbGitUrl);
 };
 

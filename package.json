@@ -1,13 +1,13 @@
 {
-  "name": "hexo-github",
-  "displayName": "Hexo GitHub",
+  "name": "vscode-hexo-github",
+  "displayName": "Hexo GitHub for VSCode",
   "description": "A VSCode extension for managing Hexo blogs with seamless GitHub integration and intuitive visual operations.",
-  "version": "2.1.1",
+  "version": "3.0.1",
   "icon": "icon.png",
   "publisher": "jyuhou-wong",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jyuhou-wong/hexo-github.git"
+    "url": "https://github.com/jyuhou-wong/vscode-hexo-github.git"
   },
   "homepage": "https://blog.hyh.ltd",
   "author": "Jyuhou Wong 黃宇豪 <jyuhou.wong@gmail.com>",
@@ -32,9 +32,9 @@
   "main": "./out/extension.js",
   "contributes": {
     "views": {
-      "hexo-github-explorer": [
+      "vscode-hexo-github-explorer": [
         {
-          "id": "hexo-github-blogs",
+          "id": "vscode-hexo-github-blogs",
           "name": "Blogs"
         }
       ]
@@ -42,157 +42,157 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "hexo-github-explorer",
-          "title": "Hexo GitHub",
-          "icon": "resources/hexo-github-explorer.svg"
+          "id": "vscode-hexo-github-explorer",
+          "title": "Hexo Explorer",
+          "icon": "resources/vscode-hexo-github-explorer.svg"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "hexo-github-blogs",
-        "contents": "Not logged in, please login to GitHub first.\n[Login to GitHub](command:hexo-github.loginToGitHub)",
-        "when": "!hexo-github.isLogin"
+        "view": "vscode-hexo-github-blogs",
+        "contents": "Not logged in, please login to GitHub first.\n[Login to GitHub](command:vscode-hexo-github.loginToGitHub)",
+        "when": "!vscode-hexo-github.isLogin"
       }
     ],
     "commands": [
       {
-        "command": "hexo-github.refreshTreeview",
+        "command": "vscode-hexo-github.refreshTreeview",
         "title": "Refresh treeview"
       },
       {
-        "command": "hexo-github.openSourceGit",
+        "command": "vscode-hexo-github.openSourceGit",
         "icon": {
-          "dark": "resources/dark/hexo-github-github.svg",
-          "light": "resources/light/hexo-github-github.svg"
+          "dark": "resources/dark/vscode-hexo-github-github.svg",
+          "light": "resources/light/vscode-hexo-github-github.svg"
         },
         "title": "Open Source Repository"
       },
       {
-        "command": "hexo-github.openPageGit",
+        "command": "vscode-hexo-github.openPageGit",
         "icon": {
-          "dark": "resources/dark/hexo-github-pages-git.svg",
-          "light": "resources/light/hexo-github-pages-git.svg"
+          "dark": "resources/dark/vscode-hexo-github-pages-git.svg",
+          "light": "resources/light/vscode-hexo-github-pages-git.svg"
         },
         "title": "Open Pages Repository"
       },
       {
-        "command": "hexo-github.openPage",
+        "command": "vscode-hexo-github.openPage",
         "icon": {
-          "dark": "resources/dark/hexo-github-home.svg",
-          "light": "resources/light/hexo-github-home.svg"
+          "dark": "resources/dark/vscode-hexo-github-home.svg",
+          "light": "resources/light/vscode-hexo-github-home.svg"
         },
         "title": "Open GitHub Pages"
       },
       {
-        "command": "hexo-github.loginToGitHub",
+        "command": "vscode-hexo-github.loginToGitHub",
         "title": "Login to GitHub"
       },
       {
-        "command": "hexo-github.logoutFromGitHub",
+        "command": "vscode-hexo-github.logoutFromGitHub",
         "icon": {
-          "dark": "resources/dark/hexo-github-logout.svg",
-          "light": "resources/light/hexo-github-logout.svg"
+          "dark": "resources/dark/vscode-hexo-github-logout.svg",
+          "light": "resources/light/vscode-hexo-github-logout.svg"
         },
         "title": "Logout from GitHub"
       },
       {
-        "command": "hexo-github.pullHexo",
+        "command": "vscode-hexo-github.pullHexo",
         "title": "Pull from GitHub",
         "icon": {
-          "dark": "resources/dark/hexo-github-pull.svg",
-          "light": "resources/light/hexo-github-pull.svg"
+          "dark": "resources/dark/vscode-hexo-github-pull.svg",
+          "light": "resources/light/vscode-hexo-github-pull.svg"
         }
       },
       {
-        "command": "hexo-github.pushHexo",
+        "command": "vscode-hexo-github.pushHexo",
         "title": "Push to GitHub",
         "icon": {
-          "dark": "resources/dark/hexo-github-push.svg",
-          "light": "resources/light/hexo-github-push.svg"
+          "dark": "resources/dark/vscode-hexo-github-push.svg",
+          "light": "resources/light/vscode-hexo-github-push.svg"
         }
       },
       {
-        "command": "hexo-github.cmd",
+        "command": "vscode-hexo-github.cmd",
         "title": "Hexo cmd"
       },
       {
-        "command": "hexo-github.localPreview",
+        "command": "vscode-hexo-github.localPreview",
         "icon": {
-          "dark": "resources/dark/hexo-github-preview.svg",
-          "light": "resources/light/hexo-github-preview.svg"
+          "dark": "resources/dark/vscode-hexo-github-preview.svg",
+          "light": "resources/light/vscode-hexo-github-preview.svg"
         },
         "title": "Preview"
       },
       {
-        "command": "hexo-github.addTheme",
+        "command": "vscode-hexo-github.addTheme",
         "icon": {
-          "dark": "resources/dark/hexo-github-add.svg",
-          "light": "resources/light/hexo-github-add.svg"
+          "dark": "resources/dark/vscode-hexo-github-add.svg",
+          "light": "resources/light/vscode-hexo-github-add.svg"
         },
         "title": "Add theme"
       },
       {
-        "command": "hexo-github.addItem",
+        "command": "vscode-hexo-github.addItem",
         "icon": {
-          "dark": "resources/dark/hexo-github-add.svg",
-          "light": "resources/light/hexo-github-add.svg"
+          "dark": "resources/dark/vscode-hexo-github-add.svg",
+          "light": "resources/light/vscode-hexo-github-add.svg"
         },
         "title": "Add"
       },
       {
-        "command": "hexo-github.publish",
+        "command": "vscode-hexo-github.publish",
         "icon": {
-          "dark": "resources/dark/hexo-github-publish.svg",
-          "light": "resources/light/hexo-github-publish.svg"
+          "dark": "resources/dark/vscode-hexo-github-publish.svg",
+          "light": "resources/light/vscode-hexo-github-publish.svg"
         },
         "title": "Publish"
       },
       {
-        "command": "hexo-github.deleteItem",
+        "command": "vscode-hexo-github.deleteItem",
         "icon": {
-          "dark": "resources/dark/hexo-github-delete.svg",
-          "light": "resources/light/hexo-github-delete.svg"
+          "dark": "resources/dark/vscode-hexo-github-delete.svg",
+          "light": "resources/light/vscode-hexo-github-delete.svg"
         },
         "title": "Delete"
       },
       {
-        "command": "hexo-github.deleteTheme",
+        "command": "vscode-hexo-github.deleteTheme",
         "icon": {
-          "dark": "resources/dark/hexo-github-delete.svg",
-          "light": "resources/light/hexo-github-delete.svg"
+          "dark": "resources/dark/vscode-hexo-github-delete.svg",
+          "light": "resources/light/vscode-hexo-github-delete.svg"
         },
         "title": "Delete theme"
       },
       {
-        "command": "hexo-github.addSite",
+        "command": "vscode-hexo-github.addSite",
         "icon": {
-          "dark": "resources/dark/hexo-github-add.svg",
-          "light": "resources/light/hexo-github-add.svg"
+          "dark": "resources/dark/vscode-hexo-github-add.svg",
+          "light": "resources/light/vscode-hexo-github-add.svg"
         },
         "title": "Add site"
       },
       {
-        "command": "hexo-github.deleteSite",
+        "command": "vscode-hexo-github.deleteSite",
         "icon": {
-          "dark": "resources/dark/hexo-github-delete.svg",
-          "light": "resources/light/hexo-github-delete.svg"
+          "dark": "resources/dark/vscode-hexo-github-delete.svg",
+          "light": "resources/light/vscode-hexo-github-delete.svg"
         },
         "title": "Delete site"
       },
       {
-        "command": "hexo-github.deploy",
+        "command": "vscode-hexo-github.deploy",
         "icon": {
-          "dark": "resources/dark/hexo-github-deploy.svg",
-          "light": "resources/light/hexo-github-deploy.svg"
+          "dark": "resources/dark/vscode-hexo-github-deploy.svg",
+          "light": "resources/light/vscode-hexo-github-deploy.svg"
         },
         "title": "Deploy blog"
       },
       {
-        "command": "hexo-github.applyTheme",
+        "command": "vscode-hexo-github.applyTheme",
         "icon": {
-          "dark": "resources/dark/hexo-github-apply.svg",
-          "light": "resources/light/hexo-github-apply.svg"
+          "dark": "resources/dark/vscode-hexo-github-apply.svg",
+          "light": "resources/light/vscode-hexo-github-apply.svg"
         },
         "title": "Apply theme"
       }
@@ -200,101 +200,101 @@
     "menus": {
       "view/title": [
         {
-          "command": "hexo-github.pullHexo",
-          "when": "view == hexo-github-blogs && hexo-github.isLogin",
+          "command": "vscode-hexo-github.pullHexo",
+          "when": "view == vscode-hexo-github-blogs && vscode-hexo-github.isLogin",
           "group": "navigation"
         },
         {
-          "command": "hexo-github.pushHexo",
-          "when": "view == hexo-github-blogs && hexo-github.isLogin",
+          "command": "vscode-hexo-github.pushHexo",
+          "when": "view == vscode-hexo-github-blogs && vscode-hexo-github.isLogin",
           "group": "navigation"
         },
         {
-          "command": "hexo-github.addSite",
-          "when": "view == hexo-github-blogs && hexo-github.isLogin",
+          "command": "vscode-hexo-github.addSite",
+          "when": "view == vscode-hexo-github-blogs && vscode-hexo-github.isLogin",
           "group": "navigation"
         },
         {
-          "command": "hexo-github.logoutFromGitHub",
-          "when": "view == hexo-github-blogs && hexo-github.isLogin",
+          "command": "vscode-hexo-github.logoutFromGitHub",
+          "when": "view == vscode-hexo-github-blogs && vscode-hexo-github.isLogin",
           "group": "navigation"
         },
         {
-          "command": "hexo-github.openSourceGit",
-          "when": "view == hexo-github-blogs && hexo-github.isLogin",
+          "command": "vscode-hexo-github.openSourceGit",
+          "when": "view == vscode-hexo-github-blogs && vscode-hexo-github.isLogin",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "hexo-github.deploy",
-          "when": "view == hexo-github-blogs && viewItem == site",
+          "command": "vscode-hexo-github.deploy",
+          "when": "view == vscode-hexo-github-blogs && viewItem == site",
           "group": "inline"
         },
         {
-          "command": "hexo-github.openPageGit",
-          "when": "view == hexo-github-blogs && viewItem == site",
+          "command": "vscode-hexo-github.openPageGit",
+          "when": "view == vscode-hexo-github-blogs && viewItem == site",
           "group": "inline"
         },
         {
-          "command": "hexo-github.openPage",
-          "when": "view == hexo-github-blogs && viewItem == site",
+          "command": "vscode-hexo-github.openPage",
+          "when": "view == vscode-hexo-github-blogs && viewItem == site",
           "group": "inline"
         },
         {
-          "command": "hexo-github.deleteSite",
-          "when": "view == hexo-github-blogs && viewItem == site",
+          "command": "vscode-hexo-github.deleteSite",
+          "when": "view == vscode-hexo-github-blogs && viewItem == site",
           "group": "inline"
         },
         {
-          "command": "hexo-github.addTheme",
-          "when": "view == hexo-github-blogs && viewItem == themes",
+          "command": "vscode-hexo-github.addTheme",
+          "when": "view == vscode-hexo-github-blogs && viewItem == themes",
           "group": "inline"
         },
         {
-          "command": "hexo-github.applyTheme",
-          "when": "view == hexo-github-blogs && viewItem == theme",
+          "command": "vscode-hexo-github.applyTheme",
+          "when": "view == vscode-hexo-github-blogs && viewItem == theme",
           "group": "inline"
         },
         {
-          "command": "hexo-github.deleteTheme",
-          "when": "view == hexo-github-blogs && viewItem == theme",
+          "command": "vscode-hexo-github.deleteTheme",
+          "when": "view == vscode-hexo-github-blogs && viewItem == theme",
           "group": "inline"
         },
         {
-          "command": "hexo-github.localPreview",
-          "when": "view == hexo-github-blogs && (viewItem == page || viewItem == md)",
+          "command": "vscode-hexo-github.localPreview",
+          "when": "view == vscode-hexo-github-blogs && (viewItem == page || viewItem == md)",
           "group": "inline"
         },
         {
-          "command": "hexo-github.addItem",
-          "when": "view == hexo-github-blogs && (viewItem == pages || viewItem == drafts || viewItem == posts || viewItem == folder)",
+          "command": "vscode-hexo-github.addItem",
+          "when": "view == vscode-hexo-github-blogs && (viewItem == pages || viewItem == drafts || viewItem == posts || viewItem == folder)",
           "group": "inline"
         },
         {
-          "command": "hexo-github.publish",
-          "when": "view == hexo-github-blogs && (viewItem == draft)",
+          "command": "vscode-hexo-github.publish",
+          "when": "view == vscode-hexo-github-blogs && (viewItem == draft)",
           "group": "inline"
         },
         {
-          "command": "hexo-github.deleteItem",
-          "when": "view == hexo-github-blogs && !(viewItem == site || viewItem == config || viewItem == themes || viewItem == theme || viewItem == pages || viewItem == drafts || viewItem == posts)",
+          "command": "vscode-hexo-github.deleteItem",
+          "when": "view == vscode-hexo-github-blogs && !(viewItem == site || viewItem == config || viewItem == themes || viewItem == theme || viewItem == pages || viewItem == drafts || viewItem == posts)",
           "group": "inline"
         }
       ],
       "editor/context": [
         {
-          "command": "hexo-github.loginToGitHub",
-          "group": "hexo-github"
+          "command": "vscode-hexo-github.loginToGitHub",
+          "group": "vscode-hexo-github"
         },
         {
-          "command": "hexo-github.localPreview",
+          "command": "vscode-hexo-github.localPreview",
           "when": "resourceLangId == markdown",
-          "group": "hexo-github"
+          "group": "vscode-hexo-github"
         },
         {
-          "command": "hexo-github.deploy",
-          "group": "hexo-github"
+          "command": "vscode-hexo-github.deploy",
+          "group": "vscode-hexo-github"
         }
       ]
     }

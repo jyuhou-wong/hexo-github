@@ -206,7 +206,7 @@ export const createNewBlogPost = async (
 const updateServerStatus = (siteName: string, status: boolean): void => {
   // vscode.commands.executeCommand(
   //   "setContext",
-  //   "hexo-github.serversStatus.get(siteName)",
+  //   "vscode-hexo-github.serversStatus.get(siteName)",
   //   status
   // );
   serversStatus.set(siteName, status);

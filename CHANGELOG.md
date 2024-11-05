@@ -1,6 +1,11 @@
 # Change Log
 
-All notable changes to the "hexo-github" extension will be documented in this file.
+All notable changes to the "vscode-hexo-github" extension will be documented in this file.
+
+## [3.0.1] - 2024-11-05
+
+### Refactor
+- Rename `hexo-github` to `vscode-hexo-github`.
 
 ## [2.1.1] - 2024-11-05
 

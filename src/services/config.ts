@@ -22,7 +22,7 @@ export const STARTER_THEMES_DIRNAME = "themes";
 // Extension Directories Name
 export const HEXO_STARTER_DIRNAME = "hexo-starter";
 export const EXT_CONFIG_NAME = "config.json";
-export const EXT_HOME_DIRNAME = ".hexo-github";
+export const EXT_HOME_DIRNAME = ".vscode-hexo-github";
 
 // Directories and File Paths
 export const HOME_DIRECTORY = homedir();
@@ -37,7 +37,7 @@ export const STARTER_REPO_ZIP_URL =
 export const REQUIRED_MODULES = ["hexo-server-live"];
 
 // Copyright Replace
-export const EXT_GIT = "https://github.com/jyuhou-wong/hexo-github";
+export const EXT_GIT = "https://github.com/jyuhou-wong/vscode-hexo-github";
 export const EXT_NAME = "Hexo GitHub";
 
 export const COPYRIGHT_SEARCH_REGEX =
