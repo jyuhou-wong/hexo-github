@@ -6,18 +6,20 @@ import { registerActiveEditorChangeListener } from "./events";
 import { loadAccessToken } from "./services/githubService";
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your extension "vscode-hexo-github" is now active!');
+  console.log(
+    'Congratulations, your extension "vscode-hexo-github" is now active!'
+  );
 
-  // 加载本地token
+  // Load local token
   loadAccessToken();
 
-  // 注册命令
+  // Register commands
   registerCommands(context);
 
-  // 注册Blogs自定义视图
+  // Register custom Blogs view
   registerBlogsProvider(context);
 
-  // 注册自定义事件
+  // Register custom events
   registerActiveEditorChangeListener(context);
 }
 

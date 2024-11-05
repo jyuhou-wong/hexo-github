@@ -8,7 +8,6 @@ import {
   installMissingDependencies,
   installModules,
   openFile,
-  revealItem,
 } from "../utils";
 import { DRAFTS_DIRNAME, POSTS_DIRNAME, REQUIRED_MODULES } from "./config";
 import { join, sep } from "path";
