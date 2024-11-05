@@ -57,7 +57,9 @@ const getCommand = (hexo: Hexo, args: any) => {
 
 // Execute Hexo command
 export const hexoExec = async (siteDir: string, cmd: string) => {
-  if (!cmd) throw new Error("Command cannot be empty!");
+  if (!cmd) {
+    throw new Error("Command cannot be empty!");
+  }
 
   const args = getArgs(cmd);
 
@@ -96,13 +98,17 @@ export const getPreviewRoute = async (
   const generators = await hexo._runGenerators();
 
   const matchingItem = generators.find(({ layout, data }: any) => {
-    if (!layout || !data.source) return false;
+    if (!layout || !data.source) {
+      return false;
+    }
     return arePathsEqual(path, join(source_dir, data.source));
   });
 
   hexo.exit();
 
-  if (!matchingItem) throw new Error("This file is not a blog document");
+  if (!matchingItem) {
+    throw new Error("This file is not a blog document");
+  }
 
   return matchingItem.path;
 };

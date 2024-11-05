@@ -81,13 +81,17 @@ export const addItem = async (
       // 处理页面
       if (label === BlogsTreeDataProvider.getLabel()) {
         const name = await promptForName("Please enter the page name");
-        if (!name) return;
+        if (!name) {
+          return;
+        }
         await handleCreateFile(siteDir, name, "Page", context); // 创建页面
       }
       // 处理草稿
       else if (label === BlogsTreeDataProvider.getLabel(DRAFTS_DIRNAME)) {
         const name = await promptForName("Please enter the draft name");
-        if (!name) return;
+        if (!name) {
+          return;
+        }
         await handleCreateFile(siteDir, name, "Draft", context); // 创建草稿
       }
       // 处理博客
@@ -97,16 +101,22 @@ export const addItem = async (
           placeHolder: "Choose an option",
         });
 
-        if (!selection) return;
+        if (!selection) {
+          return;
+        }
 
         if (selection === "Sub Route") {
           const name = await promptForName("Please enter the sub route name");
-          if (!name) return;
+          if (!name) {
+            return;
+          }
           const path = join(siteDir, config.source_dir, POSTS_DIRNAME, name);
           createDirectory(path); // 创建子目录
         } else {
           const name = await promptForName("Please enter the blog name");
-          if (!name) return;
+          if (!name) {
+            return;
+          }
           await handleCreateFile(siteDir, name, "Blog", context); // 创建博客
         }
       }
@@ -117,16 +127,22 @@ export const addItem = async (
         placeHolder: "Choose an option",
       });
 
-      if (!selection) return;
+      if (!selection) {
+        return;
+      }
 
       if (selection === "Sub Route") {
         const name = await promptForName("Please enter the sub route name");
-        if (!name) return;
+        if (!name) {
+          return;
+        }
         const route = join(element.resourceUri!.fsPath, name);
         createDirectory(route); // 创建子目录
       } else {
         const name = await promptForName("Please enter the blog name");
-        if (!name) return;
+        if (!name) {
+          return;
+        }
         await handleCreateFile(
           siteDir,
           name,
@@ -153,9 +169,13 @@ export const createNewBlogPost = async (
       placeHolder: "e.g., about/My first blog",
     });
 
-    if (!path) return;
+    if (!path) {
+      return;
+    }
 
-    if (!isValidPath(path)) throw new Error("Path is invalid");
+    if (!isValidPath(path)) {
+      throw new Error("Path is invalid");
+    }
 
     const config = await getHexoConfig(siteDir);
     const postPath = join(
@@ -165,7 +185,9 @@ export const createNewBlogPost = async (
       `${path}.md`
     );
 
-    if (existsSync(postPath)) throw new Error("Blog is existed");
+    if (existsSync(postPath)) {
+      throw new Error("Blog is existed");
+    }
 
     await hexoExec(siteDir, `new --path "${path}"`);
 
@@ -287,11 +309,15 @@ export const localPreview = async (
   // 同时打开文件在活动编辑器
   vscode.commands.executeCommand("vscode.open", Uri.file(fsPath));
 
-  if (!fsPath) return;
+  if (!fsPath) {
+    return;
+  }
 
   vscode.window.showInformationMessage("Opening...");
   try {
-    if (!serversStatus.get(siteName)) await startHexoServer(element, context);
+    if (!serversStatus.get(siteName)) {
+      await startHexoServer(element, context);
+    }
     const { address } = servers.get(siteName)!;
     const route = await getPreviewRoute(siteDir, fsPath);
     open(address + route);
@@ -316,7 +342,9 @@ export const applyTheme = async (
     vscode.commands.executeCommand("vscode.open", Uri.file(fsPath))
   );
 
-  if (!fsPath) return;
+  if (!fsPath) {
+    return;
+  }
 
   vscode.window.showInformationMessage("Applying...");
   try {
@@ -353,7 +381,9 @@ export const addTheme = async (
     placeHolder: "Choose an option",
   });
 
-  if (!selection) return;
+  if (!selection) {
+    return;
+  }
 
   vscode.window.showInformationMessage("Installing...");
 
@@ -382,7 +412,9 @@ export const deleteTheme = async (
     "Delete"
   );
 
-  if (confirmation !== "Delete") return false;
+  if (confirmation !== "Delete") {
+    return false;
+  }
 
   // Return an empty array if the themes directory does not exist
   if (existsSync(themePath)) {
@@ -443,7 +475,9 @@ export const addSite = async (
 ) => {
   try {
     const siteName = await promptForName("Please enter the site name");
-    if (!siteName) return;
+    if (!siteName) {
+      return;
+    }
 
     const octokit = await getUserOctokitInstance(localAccessToken);
     const repoExists = await checkRepoExists(octokit, siteName);
@@ -484,7 +518,9 @@ export const deleteSite = async (
     "Delete"
   );
 
-  if (confirmation !== "Delete") return false;
+  if (confirmation !== "Delete") {
+    return false;
+  }
 
   // Return an empty array if the themes directory does not exist
   if (existsSync(siteDir)) {

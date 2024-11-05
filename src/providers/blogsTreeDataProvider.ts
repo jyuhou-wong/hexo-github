@@ -97,29 +97,29 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
       await this.setSourceDirs(EXT_HOME_DIR, userName); // Ensure source directory is set
     }
 
-    if (element?.contextValue == "posts") {
+    if (element?.contextValue === "posts") {
       // If the element is the posts directory, get its children
       const postsDir = join(this.sourceDirs.get(siteName)!, POSTS_DIRNAME);
       return await this.getItems(postsDir, element);
     }
 
-    if (element?.contextValue == "drafts") {
+    if (element?.contextValue === "drafts") {
       // If the element is the drafts directory, get its children
       const draftsDir = join(this.sourceDirs.get(siteName)!, DRAFTS_DIRNAME);
       return await this.getItems(draftsDir, element);
     }
 
-    if (element?.contextValue == "themes") {
+    if (element?.contextValue === "themes") {
       // If the element is the themes directory, get its children
       return await this.getThemes(element);
     }
 
-    if (element?.contextValue == "pages") {
+    if (element?.contextValue === "pages") {
       // If the element is the main pages label, get the pages
       return await this.getPages(this.sourceDirs.get(siteName)!, element);
     }
 
-    if (element?.contextValue == "site") {
+    if (element?.contextValue === "site") {
       return await this.getSite(this.sourceDirs.get(siteName)!, element);
     }
 
@@ -370,7 +370,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
             item.contextValue = "md";
           }
 
-          if (parent.contextValue == "drafts") {
+          if (parent.contextValue === "drafts") {
             item.contextValue = "draft";
           }
         } else {
@@ -465,7 +465,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
     for (const dirent of dirents) {
       if (
         !statSync(join(userDir, dirent.name)).isDirectory() ||
-        dirent.name == ".git"
+        dirent.name === ".git"
       ) {
         continue;
       }
