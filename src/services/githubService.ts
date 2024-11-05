@@ -24,6 +24,7 @@ import {
   installNpmModules,
   refreshBlogsProvider,
   replaceLastInHtmlLinks,
+  setGitUser,
 } from "../utils";
 import { TreeItem } from "../providers/blogsTreeDataProvider";
 
@@ -381,7 +382,10 @@ export const pushHexo = async (
   context: vscode.ExtensionContext
 ): Promise<void> => {
   await pullHexo(context);
+
   const git = simpleGit(path.join(EXT_HOME_DIR, localUsername));
+  await setGitUser(git);
+
   await git.add(".");
   await git.commit("Update by https://github.com/jyuhou-wong/hexo-github");
   await git.push("origin", "main");
@@ -397,7 +401,10 @@ export const pullHexo = async (
   const octokit = await getUserOctokitInstance(localAccessToken);
   const repoExists = await checkRepoExists(octokit, "hexo-github-db");
   const userDir = path.join(EXT_HOME_DIR, localUsername);
+
   const git = simpleGit(userDir);
+  await setGitUser(git);
+
   const localRepoExists = fs.existsSync(path.join(userDir, ".git"));
 
   if (repoExists) {
@@ -537,9 +544,12 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
   }
 
   const publicDirExists = fs.existsSync(publicDir);
-  if (!publicDirExists) fs.mkdirSync(publicDir, { recursive: true });
+  if (!publicDirExists) {
+    fs.mkdirSync(publicDir, { recursive: true });
+  }
 
   const git = simpleGit(publicDir);
+  await setGitUser(git);
 
   const localRepoExists = fs.existsSync(path.join(publicDir, ".git"));
   if (!localRepoExists) {
@@ -554,11 +564,12 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
       await git.checkout("main");
     }
 
-    if (repoExists)
+    if (repoExists) {
       await git.pull("origin", "main", [
         "--allow-unrelated-histories",
         "--strategy-option=ours",
       ]);
+    }
   }
 
   await hexoExec(siteDir, "generate");
@@ -581,7 +592,7 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
     const destItem = path.join(publicDir, item);
     if (
       !fs.statSync(srcItem).isDirectory() &&
-      !excludeFiles.some((v) => v == item)
+      !excludeFiles.some((v) => v === item)
     ) {
       fs.copyFileSync(srcItem, destItem);
     }

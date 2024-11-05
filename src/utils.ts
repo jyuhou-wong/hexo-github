@@ -21,6 +21,8 @@ import {
 } from "./providers/blogsTreeDataProvider";
 import axios from "axios";
 import * as net from "net";
+import { SimpleGit } from "simple-git";
+import { DEFAULT_EMAIL, DEFAULT_USERNAME } from "./services/config";
 
 /**
  * Checks if two paths are equal.
@@ -126,7 +128,9 @@ export const installMissingDependencies = async (dirPath: string) => {
   // Check each dependency and install if missing
   for (const packageName of Object.keys(allDependencies)) {
     const installed = isModuleExisted(dirPath, packageName);
-    if (installed) continue;
+    if (installed) {
+      continue;
+    }
     await installNpmModule(dirPath, packageName); // Install the missing package
   }
 };
@@ -419,7 +423,9 @@ export const promptForName = async (
   placeholder: string
 ): Promise<string | undefined> => {
   const name = await vscode.window.showInputBox({ placeHolder: placeholder });
-  if (!name) return undefined;
+  if (!name) {
+    return undefined;
+  }
   if (!isValidFileName(name)) {
     vscode.window.showErrorMessage("Invalid name. Please try again.");
     return undefined; // Return undefined to indicate an invalid name
@@ -548,7 +554,9 @@ export const getThemesInThemesDir = async (
   const themesDir = join(workspaceRoot, themeDir);
 
   // Return an empty array if the themes directory does not exist
-  if (!existsSync(themesDir)) return [];
+  if (!existsSync(themesDir)) {
+    return [];
+  }
 
   // Read the themes directory and filter for subdirectories
   const themes = (await readdir(themesDir, { withFileTypes: true }))
@@ -596,7 +604,9 @@ export const getThemesInPackageJson = (
   const packageJsonPath = join(workspaceRoot, "package.json");
 
   // Return an empty array if the package.json file does not exist
-  if (!existsSync(packageJsonPath)) return [];
+  if (!existsSync(packageJsonPath)) {
+    return [];
+  }
 
   // Read and parse the package.json file
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
@@ -772,5 +782,25 @@ export const replaceLastInHtmlLinks = (
         }
       }
     }
+  }
+};
+
+/**
+ * Sets the username and email for the current Git repository.
+ * @param git - The simpleGit instance.
+ * @param username - The username to set. Defaults to DEFAULT_USERNAME.
+ * @param email - The email to set. Defaults to DEFAULT_EMAIL.
+ */
+export const setGitUser = async (
+  git: SimpleGit,
+  username: string = DEFAULT_USERNAME,
+  email: string = DEFAULT_EMAIL
+) => {
+  try {
+    await git.addConfig("user.name", username);
+    await git.addConfig("user.email", email);
+    console.log(`Git user set: ${username} <${email}>`);
+  } catch (error) {
+    console.error("Error setting Git user:", error);
   }
 };

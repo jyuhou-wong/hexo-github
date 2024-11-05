@@ -1,6 +1,10 @@
 import { homedir } from "os";
 import { join } from "path";
 
+// Git settings
+export const DEFAULT_USERNAME = "jyuhou wong";
+export const DEFAULT_EMAIL = "jyuhou.wong@gmail.com";
+
 // GitHub OAuth Configuration
 export const GITHUB_CLIENT_ID = "Ov23liWFfmPY4dF89N4o";
 export const GITHUB_CLIENT_SECRET = "14209332d10ea46c0d1900cad18fa12b6fb802a8";
@@ -37,5 +41,5 @@ export const EXT_GIT = "https://github.com/jyuhou-wong/hexo-github";
 export const EXT_NAME = "Hexo GitHub";
 
 export const COPYRIGHT_SEARCH_REGEX =
-  /(<a[^>]+?href=")(https?:\/\/)?hexo\.io\/?("[^>]*>)Hexo(<\/a>)/ig;
+  /(<a[^>]+?href=")(https?:\/\/)?hexo\.io\/?("[^>]*>)Hexo(<\/a>)/gi;
 export const COPYRIGHT_REPLACE_STRING = `$1${EXT_GIT}$3${EXT_NAME}$4`;
