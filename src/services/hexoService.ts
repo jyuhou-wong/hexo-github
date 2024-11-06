@@ -17,9 +17,8 @@ import {
   REQUIRED_MODULES,
 } from "./config";
 import { basename, join, sep } from "path";
-import { existsSync, readFileSync } from "fs";
-import { Uri } from "vscode";
-import { localUsername } from "./githubService";
+import { existsSync, readFileSync, rmSync } from "fs";
+import { getCName, localUsername } from "./githubService";
 import { load } from "js-yaml";
 
 interface Args {
@@ -43,14 +42,33 @@ export const initializeHexo = async (siteDir: string, args: Args = {}) => {
   await installModules(siteDir, REQUIRED_MODULES);
 
   const configPath = join(siteDir, HEXO_CONFIG_NAME);
+
+  const siteName = basename(siteDir);
   const configContents = readFileSync(configPath, "utf8");
   const config = load(configContents) as Record<string, any>;
 
-  // 如果 url 是默认值，就设置成 GitHub Pages 地址
-  if (/example\.com/i.test(config.url)) {
-    const siteName = basename(siteDir);
-    const url = `https://${localUsername}.github.io/${siteName}/`;
+  let url = "";
+
+  // 如果存在 CNAME，以 CNAME 为准
+  const cname = getCName(localUsername, siteName);
+  if (cname) {
+    url = `http://${cname}/`;
+  } else {
+    if (siteName === `${localUsername}.github.io`) {
+      url = `https://${localUsername}.github.io/`;
+    } else {
+      url = `https://${localUsername}.github.io/${siteName}/`;
+    }
+  }
+
+  if (config.url !== url) {
     modifyYamlField(configPath, "url", url);
+
+    // 修改了配置要确保清除缓存
+    const publicDir = join(siteDir, config.public_dir);
+    if (existsSync(publicDir)) {
+      rmSync(publicDir, { recursive: true, force: true });
+    }
   }
 
   // 初始化 HEXO

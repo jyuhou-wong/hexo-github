@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 import {
+  getCName,
+  setCName as setSiteCName,
   localAccessToken,
   localUsername,
   openDatabaseGit,
@@ -10,9 +12,11 @@ import {
   removeAccessToken,
   revokeAccessToken,
   startOAuthLogin,
+  pushToGitHubPages,
 } from "../services/githubService";
-import { executeWithFeedback } from "../utils";
+import { executeWithFeedback, handleError, promptForName } from "../utils";
 import { TreeItem } from "../providers/blogsTreeDataProvider";
+import { hexoExec } from "../services/hexoService";
 
 // Log in to GitHub
 export const loginToGitHub = async (
@@ -32,7 +36,6 @@ export const logoutFromGitHub = async (
   // 清除本地touken
   await removeAccessToken(localUsername);
 };
-
 
 // Pull Hexo repository
 export const pullHexoRepository = async (
@@ -84,4 +87,42 @@ export const openPage = async (
     "Successfully opened github pages!",
     "Open failed"
   );
+};
+
+// Open source Git repository (assuming this should be a different action)
+export const setCName = async (
+  element: TreeItem,
+  context: vscode.ExtensionContext
+) => {
+  try {
+    const { userName, siteName, siteDir } = element;
+
+    const nowCName = getCName(userName, siteName);
+    const cname = await promptForName("Please enter the cname", {
+      value: nowCName,
+    });
+
+    if (cname === undefined) {
+      return;
+    }
+
+    if (nowCName === cname) {
+      return;
+    }
+
+    await vscode.window.showWarningMessage(
+      `Don't forget to add "${cname}" to "${userName}.github.io" cname record on you dns`,
+      { modal: true },
+      "I know"
+    );
+
+    setSiteCName(userName, siteName, cname);
+
+    // 清除缓存
+    await hexoExec(siteDir, "clean --debug");
+
+    await pushToGitHubPages(element);
+  } catch (error) {
+    handleError(error);
+  }
 };

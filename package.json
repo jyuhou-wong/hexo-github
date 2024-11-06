@@ -85,6 +85,14 @@
         "title": "Open GitHub Pages"
       },
       {
+        "command": "vscode-hexo-github.setCName",
+        "icon": {
+          "dark": "resources/dark/vscode-hexo-github-url.svg",
+          "light": "resources/light/vscode-hexo-github-url.svg"
+        },
+        "title": "Set CName"
+      },
+      {
         "command": "vscode-hexo-github.loginToGitHub",
         "title": "Login to GitHub"
       },
@@ -227,6 +235,11 @@
       ],
       "view/item/context": [
         {
+          "command": "vscode-hexo-github.setCName",
+          "when": "view == vscode-hexo-github-blogs && viewItem == site",
+          "group": "inline"
+        },
+        {
           "command": "vscode-hexo-github.deploy",
           "when": "view == vscode-hexo-github-blogs && viewItem == site",
           "group": "inline"
@@ -312,6 +325,7 @@
     "@types/express": "^5.0.0",
     "@types/graceful-fs": "^4.1.9",
     "@types/js-yaml": "^4.0.9",
+    "@types/lodash": "^4.17.13",
     "@types/minimist": "^1.2.5",
     "@types/mocha": "^10.0.8",
     "@types/node": "20.x",
@@ -335,6 +349,7 @@
     "express": "^4.21.1",
     "hexo": "^7.3.0",
     "js-yaml": "^4.1.0",
+    "lodash": "^4.17.21",
     "minimist": "^1.2.8",
     "open": "^8.4.2",
     "simple-git": "^3.27.0",

@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
+import _ from "lodash";
 import express from "express";
 import open from "open";
 import { createServer } from "http";
@@ -40,6 +41,11 @@ if (!fs.existsSync(EXT_HOME_DIR)) {
 interface Config {
   [userName: string]: {
     accessToken?: string;
+    sites?: {
+      [sitename: string]: {
+        cname: string;
+      };
+    };
   };
 }
 
@@ -57,18 +63,55 @@ interface EnableGitHubPagesHttps {
   repo: string;
 }
 
-// 加载访问令牌
-export const loadAccessToken = async (): Promise<string | undefined> => {
+// 获取 CNAME
+export const getCName = (username: string, sitename: string): string => {
+  let config = loadConfig();
+
+  // 使用 Lodash 的 _.get 方法安全地获取嵌套属性
+  return _.get(config, [username, "sites", sitename, "cname"], "");
+};
+
+// 设置 CNAME
+export const setCName = (
+  username: string,
+  sitename: string,
+  cname: string
+): void => {
+  let config = loadConfig();
+
+  if (!config) {
+    return;
+  }
+
+  // 使用 Lodash 的 _.set 方法直接设置嵌套属性
+  _.set(config, [username, "sites", sitename, "cname"], cname);
+
+  fs.writeFileSync(EXT_CONFIG_PATH, JSON.stringify(config, null, 2), "utf8");
+};
+
+// 加载配置
+export const loadConfig = (): Config | undefined => {
+  if (!fs.existsSync(EXT_CONFIG_PATH)) {
+    return;
+  }
+
+  const rawData = fs.readFileSync(EXT_CONFIG_PATH, "utf8");
   let config: Config = {};
 
-  if (fs.existsSync(EXT_CONFIG_PATH)) {
-    const rawData = fs.readFileSync(EXT_CONFIG_PATH, "utf8");
-    try {
-      config = JSON.parse(rawData);
-    } catch (error) {
-      handleError(error, "Error parsing config file");
-    }
+  try {
+    config = JSON.parse(rawData);
+  } catch (error) {
+    handleError(error, "Error parsing config file");
+    return; // 在解析错误时返回 undefined
   }
+
+  // 使用 Lodash 检查配置是否为空
+  return _.isEmpty(config) ? undefined : config;
+};
+
+// 加载访问令牌
+export const loadAccessToken = async (): Promise<string | undefined> => {
+  let config = loadConfig() ?? {};
 
   const users = Object.keys(config);
   const userName = users.length ? users[0] : null;
@@ -102,9 +145,12 @@ export const saveAccessToken = (
   userName: string,
   accessToken: string
 ): void => {
-  let config: Config = {
-    [userName]: { accessToken },
+  let config: Config = loadConfig() ?? {
+    [userName]: { accessToken: undefined },
   };
+
+  config[userName].accessToken = accessToken;
+
   fs.writeFileSync(EXT_CONFIG_PATH, JSON.stringify(config, null, 2), "utf8");
 
   // 保存token同时创建对应用户目录
@@ -336,7 +382,7 @@ export const enableGitHubPages = async ({
 
     vscode.window.showInformationMessage("GitHub Pages 已启用");
   } catch (error) {
-    handleError(error, "启用 GitHub Pages 时出错");
+    console.warn(error);
   }
 };
 
@@ -354,7 +400,7 @@ export const enableHttps = async ({
     });
     vscode.window.showInformationMessage(response.status);
   } catch (error) {
-    handleError(error, "Error enabling HTTPS for GitHub Pages");
+    console.warn(error);
   }
 };
 
@@ -591,6 +637,7 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
 
   await hexoExec(siteDir, "generate");
 
+  // 替换版权
   replaceLastInHtmlLinks(
     publicDir,
     ".html",
@@ -598,6 +645,7 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
     COPYRIGHT_REPLACE_STRING
   );
 
+  // 复制家目录其他文件至各站点
   const userDir = path.join(EXT_HOME_DIR, userName);
 
   const items = fs.readdirSync(userDir);
@@ -615,24 +663,34 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
     }
   });
 
+  // 设置 CNAME
+  const cname = getCName(userName, siteName);
+  const cnamePath = path.join(publicDir, "CNAME");
+  if (cname) {
+    fs.writeFileSync(cnamePath, cname, "utf-8");
+  } else {
+    if (fs.existsSync(cnamePath)) {
+      fs.rmSync(cnamePath);
+    }
+  }
+
   await git.add(".");
   await git.commit(
     "Deploy by https://github.com/jyuhou-wong/vscode-hexo-github"
   );
   await git.push("origin", "main", { "--force": null });
 
-  if (!repoExists) {
-    // 启用 GitHub Pages
-    await enableGitHubPages({
-      octokit,
-      owner: userName,
-      repo: siteName,
-      branch: "main",
-      path: "/",
-    });
+  // 启用 GitHub Pages
+  await enableGitHubPages({
+    octokit,
+    owner: userName,
+    repo: siteName,
+    branch: "main",
+    path: "/",
+  });
 
-    await enableHttps({ octokit, owner: userName, repo: siteName });
-  }
+  // 启用https协议
+  await enableHttps({ octokit, owner: userName, repo: siteName });
 
   vscode.window.showInformationMessage("Pushed to GitHub Pages successfully.");
 };
@@ -669,6 +727,13 @@ export const openPageGit = async (element: TreeItem): Promise<void> => {
 // 打开 GitHub Pages 网站
 export const openUserPage = async (element: TreeItem): Promise<void> => {
   const { userName, siteName } = element;
+
+  // 如果存在cname，直接cname打开
+  const cname = getCName(userName, siteName);
+  if (cname) {
+    open(`http://${cname}`);
+    return;
+  }
 
   const octokit = await getUserOctokitInstance(localAccessToken);
 

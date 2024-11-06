@@ -421,11 +421,12 @@ export const openFile = async (path: string) => {
  * @returns Returns the name if valid, otherwise undefined.
  */
 export const promptForName = async (
-  placeholder: string
+  placeHolder: string,
+  args: object = {}
 ): Promise<string | undefined> => {
-  const name = await vscode.window.showInputBox({ placeHolder: placeholder });
+  const name = await vscode.window.showInputBox({ placeHolder, ...args });
   if (!name) {
-    return undefined;
+    return name;
   }
   if (!isValidFileName(name)) {
     vscode.window.showErrorMessage("Invalid name. Please try again.");

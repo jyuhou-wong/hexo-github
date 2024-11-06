@@ -7,6 +7,7 @@ import {
   openSourceRepository,
   pullHexoRepository,
   pushHexoRepository,
+  setCName,
 } from "./githubCommands";
 import {
   localPreview,
@@ -32,6 +33,7 @@ const commands = [
   { command: "vscode-hexo-github.openSourceGit", callback: openSourceRepository },
   { command: "vscode-hexo-github.openPageGit", callback: openPageRepository },
   { command: "vscode-hexo-github.openPage", callback: openPage },
+  { command: "vscode-hexo-github.setCName", callback: setCName },
   { command: "vscode-hexo-github.localPreview", callback: localPreview },
   { command: "vscode-hexo-github.publish", callback: publishDraft },
   { command: "vscode-hexo-github.addItem", callback: addItem },
