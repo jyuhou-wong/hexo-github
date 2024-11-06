@@ -7,12 +7,20 @@ import {
   initSourceItem,
   installMissingDependencies,
   installModules,
+  modifyYamlField,
   openFile,
 } from "../utils";
-import { DRAFTS_DIRNAME, POSTS_DIRNAME, REQUIRED_MODULES } from "./config";
-import { join, sep } from "path";
-import { existsSync } from "fs";
+import {
+  DRAFTS_DIRNAME,
+  HEXO_CONFIG_NAME,
+  POSTS_DIRNAME,
+  REQUIRED_MODULES,
+} from "./config";
+import { basename, join, sep } from "path";
+import { existsSync, readFileSync } from "fs";
 import { Uri } from "vscode";
+import { localUsername } from "./githubService";
+import { load } from "js-yaml";
 
 interface Args {
   debug?: boolean;
@@ -33,6 +41,17 @@ export const initializeHexo = async (siteDir: string, args: Args = {}) => {
 
   // 确保已经安装了必备插件
   await installModules(siteDir, REQUIRED_MODULES);
+
+  const configPath = join(siteDir, HEXO_CONFIG_NAME);
+  const configContents = readFileSync(configPath, "utf8");
+  const config = load(configContents) as Record<string, any>;
+
+  // 如果 url 是默认值，就设置成 GitHub Pages 地址
+  if (/example\.com/i.test(config.url)) {
+    const siteName = basename(siteDir);
+    const url = `https://${localUsername}.github.io/${siteName}/`;
+    modifyYamlField(configPath, "url", url);
+  }
 
   // 初始化 HEXO
   const hexo = new Hexo(siteDir, args);

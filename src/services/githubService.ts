@@ -20,6 +20,7 @@ import {
 } from "./config";
 import { hexoExec, initializeHexo } from "./hexoService";
 import {
+  clearDirectory,
   handleError,
   installNpmModules,
   refreshBlogsProvider,
@@ -114,7 +115,11 @@ export const saveAccessToken = (
 
   localUsername = userName;
   localAccessToken = accessToken;
-  vscode.commands.executeCommand("setContext", "vscode-hexo-github.isLogin", true);
+  vscode.commands.executeCommand(
+    "setContext",
+    "vscode-hexo-github.isLogin",
+    true
+  );
   vscode.commands
     .executeCommand("vscode-hexo-github.refreshTreeview")
     .then(() => vscode.commands.executeCommand("vscode-hexo-github.pullHexo"));
@@ -141,7 +146,11 @@ export const removeAccessToken = (userName: string) => {
   localUsername = "";
   localAccessToken = "";
 
-  vscode.commands.executeCommand("setContext", "vscode-hexo-github.isLogin", false);
+  vscode.commands.executeCommand(
+    "setContext",
+    "vscode-hexo-github.isLogin",
+    false
+  );
   vscode.commands.executeCommand("vscode-hexo-github.refreshTreeview");
 };
 
@@ -387,7 +396,9 @@ export const pushHexo = async (
   await setGitUser(git);
 
   await git.add(".");
-  await git.commit("Update by https://github.com/jyuhou-wong/vscode-hexo-github");
+  await git.commit(
+    "Update by https://github.com/jyuhou-wong/vscode-hexo-github"
+  );
   await git.push("origin", "main");
   vscode.window.showInformationMessage(
     "Pushed to vscode-hexo-github-db successfully."
@@ -446,7 +457,9 @@ const initializeLocalRepo = async (git: SimpleGit): Promise<void> => {
   await git.init();
   await checkoutBranch(git);
   await git.add(".");
-  await git.commit("Update by https://github.com/jyuhou-wong/vscode-hexo-github");
+  await git.commit(
+    "Update by https://github.com/jyuhou-wong/vscode-hexo-github"
+  );
   const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${localUsername}/vscode-hexo-github-db.git`;
   await git.addRemote("origin", remoteUrl);
   await git.pull("origin", "main", [
@@ -564,12 +577,16 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
       await git.checkout("main");
     }
 
+    // 从远程仓库 origin 获取 main 分支的最新提交
     if (repoExists) {
       await git.pull("origin", "main", [
         "--allow-unrelated-histories",
         "--strategy-option=ours",
       ]);
     }
+
+    // 只保留 .git，防止其他文件干扰
+    clearDirectory(publicDir, [".git"]);
   }
 
   await hexoExec(siteDir, "generate");
@@ -599,7 +616,9 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
   });
 
   await git.add(".");
-  await git.commit("Deploy by https://github.com/jyuhou-wong/vscode-hexo-github");
+  await git.commit(
+    "Deploy by https://github.com/jyuhou-wong/vscode-hexo-github"
+  );
   await git.push("origin", "main", { "--force": null });
 
   if (!repoExists) {

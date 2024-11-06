@@ -23,6 +23,7 @@ import axios from "axios";
 import * as net from "net";
 import { SimpleGit } from "simple-git";
 import { DEFAULT_EMAIL, DEFAULT_USERNAME } from "./services/config";
+import { load, dump } from "js-yaml";
 
 /**
  * Checks if two paths are equal.
@@ -802,5 +803,70 @@ export const setGitUser = async (
     console.log(`Git user set: ${username} <${email}>`);
   } catch (error) {
     console.error("Error setting Git user:", error);
+  }
+};
+
+/**
+ * Clears the specified directory, excluding certain files and folders.
+ * @param dir - The path of the directory to clear.
+ * @param exclude - An array of files and folders to exclude from deletion.
+ */
+export const clearDirectory = (dir: string, exclude: string[] = []) => {
+  // Check if the directory exists
+  if (!existsSync(dir)) {
+    console.error(`Directory does not exist: ${dir}`);
+    return;
+  }
+
+  // Read all files and folders in the directory
+  const items = readdirSync(dir);
+
+  items.forEach((item) => {
+    const itemPath = join(dir, item);
+
+    // Check if the current item is in the exclude list
+    if (!exclude.includes(item)) {
+      // Remove file or folder
+      rmSync(itemPath, { recursive: true, force: true });
+      console.log(`Deleted: ${itemPath}`);
+    } else {
+      console.log(`Skipped: ${itemPath}`);
+    }
+  });
+};
+
+/**
+ * Modifies a specific field in a YAML file.
+ * @param filePath - The path to the YAML file.
+ * @param fieldPath - The dot-separated path to the field to modify (e.g., 'parent.child').
+ * @param newValue - The new value to set for the field.
+ * @throws Will throw an error if the file cannot be read or written.
+ */
+export const modifyYamlField = (
+  filePath: string,
+  fieldPath: string,
+  newValue: any
+) => {
+  try {
+    const fileContents = readFileSync(filePath, "utf8");
+    const data = load(fileContents) as Record<string, any>;
+
+    const fields = fieldPath.split(".");
+    let current = data;
+
+    for (let i = 0; i < fields.length - 1; i++) {
+      if (!(fields[i] in current)) {
+        throw new Error(`Field path does not exist: ${fieldPath}`);
+      }
+      current = current[fields[i]];
+    }
+
+    current[fields[fields.length - 1]] = newValue;
+
+    const updatedYaml = dump(data);
+    writeFileSync(filePath, updatedYaml, "utf8");
+    console.log(`Successfully updated ${fieldPath} to ${newValue}`);
+  } catch (error) {
+    handleError(error, "Error modifying YAML file");
   }
 };
