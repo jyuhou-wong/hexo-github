@@ -2,6 +2,14 @@
 
 All notable changes to the "vscode-hexo-github" extension will be documented in this file.
 
+## [3.0.3] - 2024-11-06
+
+### Added
+- feat: support cname changing method
+
+### Fixed
+- fix: multi-site root path issue
+
 ## [3.0.2] - 2024-11-05
 
 ### Refactor

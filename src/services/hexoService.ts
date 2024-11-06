@@ -52,12 +52,12 @@ export const initializeHexo = async (siteDir: string, args: Args = {}) => {
   // 如果存在 CNAME，以 CNAME 为准
   const cname = getCName(localUsername, siteName);
   if (cname) {
-    url = `http://${cname}/`;
+    url = `http://${cname}`;
   } else {
     if (siteName === `${localUsername}.github.io`) {
-      url = `https://${localUsername}.github.io/`;
+      url = `https://${localUsername}.github.io`;
     } else {
-      url = `https://${localUsername}.github.io/${siteName}/`;
+      url = `https://${localUsername}.github.io/${siteName}`;
     }
   }
 
