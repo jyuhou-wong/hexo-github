@@ -29,6 +29,7 @@ import {
   setGitUser,
 } from "../utils";
 import { TreeItem } from "../providers/blogsTreeDataProvider";
+import { logMessage } from "../extension";
 
 export let localUsername: string = "";
 export let localAccessToken: string = "";
@@ -227,7 +228,7 @@ export const startOAuthLogin = async (): Promise<void> => {
 
         saveAccessToken(loginName, data.access_token);
 
-        vscode.window.showInformationMessage(`Logged in as ${loginName}`);
+        logMessage(`Logged in as ${loginName}`, true);
 
         res.send("Login successful! You can close this window.");
       } else {
@@ -255,11 +256,11 @@ export const revokeAccessToken = async (
 
   try {
     // 吊销当前访问令牌
-    const response = await octokit.rest.apps.deleteToken({
+    await octokit.rest.apps.deleteToken({
       client_id: GITHUB_CLIENT_ID,
       access_token,
     });
-    vscode.window.showInformationMessage("Token revoked successfully.");
+    logMessage("Token revoked successfully.", true);
   } catch (error) {
     handleError(error, "Error revoking token");
   }
@@ -298,9 +299,9 @@ export const getLoginName = async (
   try {
     const { data: user } = await octokit.rest.users.getAuthenticated();
     return user.login;
-  } catch (error) {
+  } catch (error: any) {
     // 不抛出错误直接返回
-    console.error(error);
+    logMessage(error.message, false, "error");
     return;
   }
 };
@@ -326,7 +327,7 @@ export const initializeSite = async (siteDir: string): Promise<void> => {
     throw new Error(`site ${path.basename(siteDir)} already exists`);
   }
 
-  vscode.window.showInformationMessage("Creating...");
+  logMessage("Creating...", true);
 
   const response = await axios({
     method: "get",
@@ -342,9 +343,7 @@ export const initializeSite = async (siteDir: string): Promise<void> => {
       fs.createReadStream(ZIP_FILE_PATH)
         .pipe(unzipper.Extract({ path: EXT_HOME_DIR }))
         .on("close", async () => {
-          vscode.window.showInformationMessage(
-            "Extracted hexo-starter contents successfully."
-          );
+          logMessage("Extracted hexo-starter contents successfully.", true);
           const extractedDir = path.join(EXT_HOME_DIR, "hexo-starter-master");
           fs.renameSync(extractedDir, siteDir);
           fs.unlinkSync(ZIP_FILE_PATH);
@@ -371,7 +370,7 @@ export const enableGitHubPages = async ({
   path = "/",
 }: EnableGitHubPagesParams): Promise<void> => {
   try {
-    const response = await octokit.request("POST /repos/{owner}/{repo}/pages", {
+    await octokit.request("POST /repos/{owner}/{repo}/pages", {
       owner,
       repo,
       source: {
@@ -380,9 +379,9 @@ export const enableGitHubPages = async ({
       },
     });
 
-    vscode.window.showInformationMessage("GitHub Pages 已启用");
-  } catch (error) {
-    console.warn(error);
+    logMessage("GitHub Pages 已启用", true);
+  } catch (error: any) {
+    logMessage(error.message, false, "error");
   }
 };
 
@@ -398,9 +397,10 @@ export const enableHttps = async ({
       repo,
       https_enforced: true, // 默认启用 HTTPS
     });
-    vscode.window.showInformationMessage(response.status);
-  } catch (error) {
-    console.warn(error);
+    logMessage(response.status, true);
+  } catch (error: any) {
+    // 不抛出错误直接返回
+    logMessage(error.message, false, "error");
   }
 };
 
@@ -413,9 +413,7 @@ export const createRemoteRepo = async (
     name: repoName,
     private: true,
   });
-  vscode.window.showInformationMessage(
-    `Created repository: ${response.data.full_name}`
-  );
+  logMessage(`Created repository: ${response.data.full_name}`, true);
 };
 
 // 删除远程仓库
@@ -426,9 +424,9 @@ export const deleteRemoteRepo = async (
 ): Promise<void> => {
   try {
     await octokit.rest.repos.delete({ owner, repo: repoName });
-    vscode.window.showInformationMessage(`Deleted repository: ${repoName}`);
+    logMessage(`Deleted repository: ${repoName}`, true);
   } catch (error: any) {
-    vscode.window.showErrorMessage("Error deleting repository:", error.message);
+    logMessage(`Error deleting repository: ${error.message}`, true, "error");
   }
 };
 
@@ -439,16 +437,13 @@ export const pushHexo = async (
   await pullHexo(context);
 
   const git = simpleGit(path.join(EXT_HOME_DIR, localUsername));
-  await setGitUser(git);
 
   await git.add(".");
   await git.commit(
     "Update by https://github.com/jyuhou-wong/vscode-hexo-github"
   );
   await git.push("origin", "main");
-  vscode.window.showInformationMessage(
-    "Pushed to vscode-hexo-github-db successfully."
-  );
+  logMessage("Pushed to vscode-hexo-github-db successfully.", true);
 };
 
 // 拉取 Hexo 仓库
@@ -460,7 +455,6 @@ export const pullHexo = async (
   const userDir = path.join(EXT_HOME_DIR, localUsername);
 
   const git = simpleGit(userDir);
-  await setGitUser(git);
 
   const localRepoExists = fs.existsSync(path.join(userDir, ".git"));
 
@@ -469,10 +463,6 @@ export const pullHexo = async (
   } else {
     await handleNonExistingRepo(octokit, git, localRepoExists);
   }
-
-  vscode.window.showInformationMessage(
-    "Pulled latest changes from vscode-hexo-github-db successfully."
-  );
 
   refreshBlogsProvider(context);
 };
@@ -487,8 +477,9 @@ const handleExistingRepo = async (
       "--allow-unrelated-histories",
       "--strategy-option=theirs",
     ]);
-    vscode.window.showInformationMessage(
-      "Pulled latest changes from vscode-hexo-github-db successfully."
+    logMessage(
+      "Pulled latest changes from vscode-hexo-github-db successfully.",
+      true
     );
   } else {
     await initializeLocalRepo(git);
@@ -497,10 +488,9 @@ const handleExistingRepo = async (
 
 // 初始化本地仓库
 const initializeLocalRepo = async (git: SimpleGit): Promise<void> => {
-  vscode.window.showInformationMessage(
-    "Local repository does not exist. Pulling..."
-  );
+  logMessage("Local repository does not exist. Pulling...", true);
   await git.init();
+  await setGitUser(git);
   await checkoutBranch(git);
   await git.add(".");
   await git.commit(
@@ -521,13 +511,15 @@ const handleNonExistingRepo = async (
   localRepoExists: boolean
 ): Promise<void> => {
   if (!localRepoExists) {
-    vscode.window.showInformationMessage(
-      "Remote vscode-hexo-github-db and local repository do not exist. Creating..."
+    logMessage(
+      "Remote vscode-hexo-github-db and local repository do not exist. Creating...",
+      true
     );
     await createLocalRepo(octokit, git);
   } else {
-    vscode.window.showInformationMessage(
-      "Local repository exists but remote vscode-hexo-github-db does not exist. Creating..."
+    logMessage(
+      "Local repository exists but remote vscode-hexo-github-db does not exist. Creating...",
+      true
     );
     await createRemoteRepo(octokit, "vscode-hexo-github-db");
     await git.push("origin", "main");
@@ -537,6 +529,7 @@ const handleNonExistingRepo = async (
 // 创建本地仓库
 const createLocalRepo = async (octokit: any, git: SimpleGit): Promise<void> => {
   await git.init();
+  await setGitUser(git);
 
   const readmePath = path.join(EXT_HOME_DIR, localUsername, "README.md");
   fs.writeFileSync(
@@ -597,9 +590,7 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
     const response = await octokit.rest.repos.createForAuthenticatedUser({
       name: siteName,
     });
-    vscode.window.showInformationMessage(
-      `Created repository: ${response.data.full_name}`
-    );
+    logMessage(`Created repository: ${response.data.full_name}`, true);
   }
 
   const publicDirExists = fs.existsSync(publicDir);
@@ -608,11 +599,11 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
   }
 
   const git = simpleGit(publicDir);
-  await setGitUser(git);
 
   const localRepoExists = fs.existsSync(path.join(publicDir, ".git"));
   if (!localRepoExists) {
     await git.init();
+    await setGitUser(git);
     const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${userName}/${siteName}.git`;
     await git.addRemote("origin", remoteUrl);
 
@@ -692,7 +683,7 @@ export const pushToGitHubPages = async (element: TreeItem): Promise<void> => {
   // 启用https协议
   await enableHttps({ octokit, owner: userName, repo: siteName });
 
-  vscode.window.showInformationMessage("Pushed to GitHub Pages successfully.");
+  logMessage("Pushed to GitHub Pages successfully.", true);
 };
 
 // 打开 Hexo 数据库仓库

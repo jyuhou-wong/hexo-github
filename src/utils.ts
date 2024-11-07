@@ -24,6 +24,7 @@ import * as net from "net";
 import { SimpleGit } from "simple-git";
 import { DEFAULT_EMAIL, DEFAULT_USERNAME } from "./services/config";
 import { load, dump } from "js-yaml";
+import { logMessage } from "./extension";
 
 /**
  * Checks if two paths are equal.
@@ -52,7 +53,9 @@ export const handleError = (
     errorMessage = `${message}: An unknown error occurred`;
   }
 
-  vscode.window.showErrorMessage(errorMessage);
+  logMessage(errorMessage, false, "error");
+
+  logMessage(errorMessage, true, "error");
 };
 
 // Promisify exec for easier async/await usage
@@ -62,7 +65,7 @@ export const execAsync = promisify(exec);
 export const uninstallNpmModule = async (dirPath: string, name: string) => {
   try {
     await execAsync(`npm uninstall ${name}`, { cwd: dirPath });
-    vscode.window.showInformationMessage(`"${name}" uninstalled successfully.`);
+    logMessage(`"${name}" uninstalled successfully.`, true);
   } catch (error) {
     handleError(error, `Error uninstalling "${name}"`);
   }
@@ -80,9 +83,9 @@ export const isModuleExisted = (
 // Install NPM modules
 export const installNpmModule = async (dirPath: string, name: string) => {
   try {
-    vscode.window.showInformationMessage(`Installing "${name}" module.`);
+    logMessage(`Installing "${name}" module.`, true);
     await execAsync(`npm install ${name}`, { cwd: dirPath });
-    vscode.window.showInformationMessage(`"${name}" installed successfully.`);
+    logMessage(`"${name}" installed successfully.`, true);
     return true;
   } catch (error) {
     handleError(error, `Error installing "${name}"`);
@@ -93,9 +96,9 @@ export const installNpmModule = async (dirPath: string, name: string) => {
 // Install NPM modules
 export const installNpmModules = async (dirPath: string) => {
   try {
-    vscode.window.showInformationMessage("Installing NPM modules...");
+    logMessage("Installing NPM modules...", true);
     await execAsync("npm install", { cwd: dirPath });
-    vscode.window.showInformationMessage("NPM modules installed successfully.");
+    logMessage("NPM modules installed successfully.", true);
     return true;
   } catch (error) {
     handleError(error, "Error installing NPM modules");
@@ -144,7 +147,7 @@ export const installMissingDependencies = async (dirPath: string) => {
 export const installModules = async (dirPath: string, modules: string[]) => {
   // Ensure the directory exists
   if (!existsSync(dirPath)) {
-    vscode.window.showWarningMessage(`Directory "${dirPath}" does not exist.`);
+    logMessage(`Directory "${dirPath}" does not exist.`, true, "error");
     return;
   }
 
@@ -385,7 +388,7 @@ export const deleteItem = async (
     try {
       // Delete the item (file or directory)
       rmSync(path, { recursive: true, force: true });
-      vscode.window.showInformationMessage(`Deleted "${path}" successfully.`);
+      logMessage(`Deleted "${path}" successfully.`, true);
     } catch (error) {
       handleError(error, "Error deleting item");
     }
@@ -398,9 +401,7 @@ export const deleteItem = async (
  */
 export const createDirectory = (path: string) => {
   mkdirSync(path, { recursive: true });
-  vscode.window.showInformationMessage(
-    `Subdirectory ${basename(path)} created.`
-  );
+  logMessage(`Subdirectory ${basename(path)} created.`, true);
 };
 
 /**
@@ -410,9 +411,7 @@ export const createDirectory = (path: string) => {
 export const openFile = async (path: string) => {
   const document = await vscode.workspace.openTextDocument(path);
   await vscode.window.showTextDocument(document);
-  vscode.window.showInformationMessage(
-    `File ${basename(path)} opened for editing.`
-  );
+  logMessage(`File ${basename(path)} opened for editing.`, true);
 };
 
 /**
@@ -429,7 +428,7 @@ export const promptForName = async (
     return name;
   }
   if (!isValidFileName(name)) {
-    vscode.window.showErrorMessage("Invalid name. Please try again.");
+    logMessage("Invalid name. Please try again.", true, "error");
     return undefined; // Return undefined to indicate an invalid name
   }
   return name;
@@ -461,7 +460,7 @@ export const executeUserCommand = async (
     }
   } else {
     // Warn the user if no command was entered
-    vscode.window.showWarningMessage("No command entered!");
+    logMessage("No command entered!", true, "error");
   }
 };
 
@@ -478,7 +477,7 @@ export const executeWithFeedback = async (
 ) => {
   try {
     await action(); // Execute the provided action
-    vscode.window.showInformationMessage(successMessage); // Show success message
+    logMessage(successMessage, true); // Show success message
   } catch (error) {
     handleError(error, errorMessage); // Handle errors and show error message
   }
@@ -535,7 +534,7 @@ export const searchNpmPackages = async (
 
     return matchedPackages.map((pkg) => pkg.package.name); // Return only the package names
   } catch (error) {
-    console.error("Error fetching npm packages:", error);
+    logMessage(`Error fetching npm packages: ${error}`, false, "error");
     throw error; // Re-throw error for handling in the calling function
   }
 };
@@ -704,7 +703,7 @@ export const refreshBlogsProvider = (context: vscode.ExtensionContext) => {
   if (blogsProvider) {
     blogsProvider.refresh(); // Call refresh if the provider exists
   } else {
-    vscode.window.showWarningMessage("BlogsTreeDataProvider not found.");
+    logMessage("BlogsTreeDataProvider not found.", true, "error");
   }
 };
 
@@ -727,7 +726,7 @@ export const initSourceItem = (sourceDir: string, items: string[]) => {
     const itemDir = join(sourceDir, item);
     if (!existsSync(itemDir)) {
       mkdirSync(itemDir);
-      vscode.window.showInformationMessage(`Created folder: "${item}"`);
+      logMessage(`Created folder: "${item}"`, true);
     }
   }
 };
@@ -747,7 +746,7 @@ export const replaceLastInHtmlLinks = (
 ) => {
   // Check if the directory exists
   if (!existsSync(dirPath)) {
-    console.error(`Directory "${dirPath}" does not exist.`);
+    logMessage(`Directory "${dirPath}" does not exist.`);
     return;
   }
 
@@ -780,7 +779,7 @@ export const replaceLastInHtmlLinks = (
         // Only write back if there are changes
         if (content !== newContent) {
           writeFileSync(itemPath, newContent, "utf-8");
-          console.log(`Updated: ${itemPath}`);
+          logMessage(`Updated: ${itemPath}`);
         }
       }
     }
@@ -801,9 +800,13 @@ export const setGitUser = async (
   try {
     await git.addConfig("user.name", username);
     await git.addConfig("user.email", email);
-    console.log(`Git user set: ${username} <${email}>`);
+    logMessage(`Git user set: ${username} <${email}>`);
   } catch (error) {
-    console.error("Error setting Git user:", error);
+    logMessage(
+      `Error setting Git user: ${(error as Error).message}`,
+      false,
+      "error"
+    );
   }
 };
 
@@ -815,7 +818,7 @@ export const setGitUser = async (
 export const clearDirectory = (dir: string, exclude: string[] = []) => {
   // Check if the directory exists
   if (!existsSync(dir)) {
-    console.error(`Directory does not exist: ${dir}`);
+    logMessage(`Directory does not exist: ${dir}`, false, "error");
     return;
   }
 
@@ -829,9 +832,9 @@ export const clearDirectory = (dir: string, exclude: string[] = []) => {
     if (!exclude.includes(item)) {
       // Remove file or folder
       rmSync(itemPath, { recursive: true, force: true });
-      console.log(`Deleted: ${itemPath}`);
+      logMessage(`Deleted: ${itemPath}`);
     } else {
-      console.log(`Skipped: ${itemPath}`);
+      logMessage(`Skipped: ${itemPath}`);
     }
   });
 };
@@ -866,7 +869,7 @@ export const modifyYamlField = (
 
     const updatedYaml = dump(data);
     writeFileSync(filePath, updatedYaml, "utf8");
-    console.log(`Successfully updated ${fieldPath} to ${newValue}`);
+    logMessage(`Successfully updated ${fieldPath} to ${newValue}`);
   } catch (error) {
     handleError(error, "Error modifying YAML file");
   }

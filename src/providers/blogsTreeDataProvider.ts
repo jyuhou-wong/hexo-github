@@ -22,6 +22,7 @@ import { existsSync, statSync } from "fs";
 import { FSWatcher, watch } from "chokidar";
 import { getThemesInPackageJson, getThemesInThemesDir } from "../utils";
 import { localAccessToken, localUsername } from "../services/githubService";
+import { logMessage } from "../extension";
 
 // Define the TreeItem class which represents each item in the tree
 export class TreeItem extends vscode.TreeItem {
@@ -164,8 +165,8 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
           return item;
         });
       return items; // Return the root items
-    } catch (err) {
-      console.error(err); // Log any errors
+    } catch (err: any) {
+      logMessage(err.message, false, "error");
       return Promise.reject(err); // Reject the promise on error
     }
   }
@@ -241,8 +242,8 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
       items.unshift(config); // Add the config label
 
       return items; // Return the root items
-    } catch (err) {
-      console.error(err); // Log any errors
+    } catch (err: any) {
+      logMessage(err.message, false, "error");
       return Promise.reject(err); // Reject the promise on error
     }
   }
@@ -323,8 +324,8 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
           return item; // Return the created item
         });
       return items; // Return the list of page items
-    } catch (err) {
-      console.error(err); // Log any errors
+    } catch (err: any) {
+      logMessage(err.message, false, "error");
       return Promise.reject(err); // Reject the promise on error
     }
   }
@@ -381,8 +382,8 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
         return item; // Return the created item
       });
       return items; // Return the list of items
-    } catch (err) {
-      console.error(err); // Log any errors
+    } catch (err: any) {
+      logMessage(err.message, false, "error");
       return Promise.reject(err); // Reject the promise on error
     }
   }
@@ -446,7 +447,7 @@ export class BlogsTreeDataProvider implements TreeDataProvider<TreeItem> {
 
     // Generic event handler function
     const handleEvent = (eventType: string, path: string) => {
-      console.log(`${eventType} event: ${path}`); // Log the event
+      logMessage(`${eventType} event: ${path}`); // Log the event
       this.refresh(); // Refresh the tree
     };
 

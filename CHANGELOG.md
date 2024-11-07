@@ -2,6 +2,11 @@
 
 All notable changes to the "vscode-hexo-github" extension will be documented in this file.
 
+## [3.0.4] - 2024-11-07
+
+### Added
+- feat: support logging to the output console
+
 ## [3.0.3] - 2024-11-06
 
 ### Added

@@ -90,30 +90,36 @@ Hexo-GitHub 是一个 VSCode 插件，专注于通过直观的可视化操作简
 
 All notable changes to the "vscode-hexo-github" extension will be documented in this file.
 
-## [3.0.3] - 2024-11-06
+### [3.0.4] - 2024-11-07
 
-### Added
+#### Added
+- feat: support logging to the output console
+
+
+### [3.0.3] - 2024-11-06
+
+#### Added
 - feat: support cname changing method
 
-### Fixed
+#### Fixed
 - fix: multi-site root path issue
 
-## [3.0.2] - 2024-11-05
+### [3.0.2] - 2024-11-05
 
-### Refactor
+#### Refactor
 - Some code style.
 
-## [3.0.1] - 2024-11-05
+### [3.0.1] - 2024-11-05
 
-### Refactor
+#### Refactor
 - Rename `hexo-github` to `vscode-hexo-github`.
 
-## [2.1.1] - 2024-11-05
+### [2.1.1] - 2024-11-05
 
-### Added
+#### Added
 - Added `setGitUser` method
 
-### Fixed
+#### Fixed
 - Fixed curly issues
 
 ### [2.0.11] - 2024-11-01

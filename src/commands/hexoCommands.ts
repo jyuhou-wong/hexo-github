@@ -45,6 +45,7 @@ import {
   BlogsTreeDataProvider,
   TreeItem,
 } from "../providers/blogsTreeDataProvider";
+import { logMessage } from "../extension";
 
 interface ServerObj {
   server: Server;
@@ -194,9 +195,7 @@ export const createNewBlogPost = async (
     // 打开文件进行编辑
     const document = await vscode.workspace.openTextDocument(postPath);
     await vscode.window.showTextDocument(document);
-    vscode.window.showInformationMessage(
-      `Blog ${basename(path)} created and opened for editing.`
-    );
+    logMessage(`Blog ${basename(path)} created and opened for editing.`, true);
   } catch (error) {
     handleError(error, "Failed to create new blog");
   }
@@ -218,7 +217,7 @@ export const startHexoServer = async (
   _context: vscode.ExtensionContext
 ) => {
   const { siteName, siteDir } = element;
-  vscode.window.showInformationMessage("Starting server...");
+  logMessage("Starting server...", true);
   try {
     const port = await getRandomAvailablePort();
     const server = await hexoExec(
@@ -231,7 +230,7 @@ export const startHexoServer = async (
     servers.set(siteName, { server, address: url });
 
     updateServerStatus(siteName, true);
-    vscode.window.showInformationMessage(`Successfully started server: ${url}`);
+    logMessage(`Successfully started server: ${url}`, true);
   } catch (error) {
     handleError(error, "Failed to start Hexo server");
   }
@@ -247,7 +246,7 @@ export const stopHexoServer = async (
     const { server } = servers.get(siteName)!;
     server.close();
     updateServerStatus(siteName, false);
-    vscode.window.showInformationMessage("Successfully stoped server");
+    logMessage("Successfully stoped server", true);
   } catch (error) {
     handleError(error, "Failed to stop Hexo server");
   }
@@ -273,7 +272,7 @@ export const publishDraft = async (
 
     await openFile(postPath);
 
-    vscode.window.showInformationMessage(`Successfully published ${name}`);
+    logMessage(`Successfully published ${name}`, true);
   } catch (error) {
     handleError(error, `Failed to publish ${name}`);
   }
@@ -284,12 +283,10 @@ export const deployBlog = async (
   element: TreeItem,
   _context: vscode.ExtensionContext
 ) => {
-  vscode.window.showInformationMessage("Deploying...");
+  logMessage("Deploying...", true);
   try {
     await pushToGitHubPages(element);
-    vscode.window.showInformationMessage(
-      "Successfully deployed blog to GitHub pages"
-    );
+    logMessage("Successfully deployed blog to GitHub pages", true);
   } catch (error) {
     handleError(error, "Failed to deploy blog to GitHub pages");
   }
@@ -313,7 +310,7 @@ export const localPreview = async (
     return;
   }
 
-  vscode.window.showInformationMessage("Opening...");
+  logMessage("Opening...", true);
   try {
     if (!serversStatus.get(siteName)) {
       await startHexoServer(element, context);
@@ -346,7 +343,7 @@ export const applyTheme = async (
     return;
   }
 
-  vscode.window.showInformationMessage("Applying...");
+  logMessage("Applying...", true);
   try {
     // 应用主题
     await hexoExec(siteDir, `config theme ${label} --debug`);
@@ -360,9 +357,7 @@ export const applyTheme = async (
       await startHexoServer(element, context);
     }
 
-    vscode.window.showInformationMessage(
-      `Successfully applied the theme "${label}".`
-    );
+    logMessage(`Successfully applied the theme "${label}".`, true);
   } catch (error) {
     handleError(error, "Failed to apply themee");
   }
@@ -374,7 +369,7 @@ export const addTheme = async (
   context: vscode.ExtensionContext
 ) => {
   const { siteDir } = element;
-  vscode.window.showInformationMessage("Loading...");
+  logMessage("Loading...", true);
 
   const options = await searchNpmPackages("hexo-theme-", /^hexo-theme-[^-]+$/);
   const selection = await vscode.window.showQuickPick(options, {
@@ -385,7 +380,7 @@ export const addTheme = async (
     return;
   }
 
-  vscode.window.showInformationMessage("Installing...");
+  logMessage("Installing...", true);
 
   try {
     await installNpmModule(siteDir, selection);
@@ -420,9 +415,7 @@ export const deleteTheme = async (
   if (existsSync(themePath)) {
     try {
       rmSync(themePath, { recursive: true, force: true });
-      vscode.window.showInformationMessage(
-        `Successfully deleted "${label}" Theme.`
-      );
+      logMessage(`Successfully deleted "${label}" Theme.`, true);
     } catch (error) {
       handleError(error, `Error deleting "${label}" Theme.`);
     }
@@ -433,8 +426,9 @@ export const deleteTheme = async (
       await execAsync(`npm uninstall hexo-theme-${label}`, {
         cwd: siteDir,
       });
-      vscode.window.showInformationMessage(
-        `"hexo-theme-${label}" npm module uninstalled successfully.`
+      logMessage(
+        `"hexo-theme-${label}" npm module uninstalled successfully.`,
+        true
       );
     } catch (error) {
       handleError(
@@ -455,9 +449,7 @@ export const deleteTheme = async (
     if (confirmation === "Delete") {
       try {
         rmSync(themeConfigPath, { recursive: true, force: true });
-        vscode.window.showInformationMessage(
-          `Successfully deleted "${label}" Theme config.`
-        );
+        logMessage(`Successfully deleted "${label}" Theme config.`, true);
       } catch (error) {
         handleError(error, `Error deleting "${label}" Theme config.`);
       }
@@ -526,9 +518,7 @@ export const deleteSite = async (
   if (existsSync(siteDir)) {
     try {
       rmSync(siteDir, { recursive: true, force: true });
-      vscode.window.showInformationMessage(
-        `Successfully deleted "${label}" site.`
-      );
+      logMessage(`Successfully deleted "${label}" site.`, true);
     } catch (error) {
       handleError(error, `Error deleting "${label}" site.`);
     }
@@ -560,7 +550,7 @@ export const deleteSite = async (
 // Test something
 export const testSomething = async () => {
   try {
-    vscode.window.showInformationMessage("Test completed successfully");
+    logMessage("Test completed successfully", true);
   } catch (error) {
     handleError(error, "Failed to test");
   }
