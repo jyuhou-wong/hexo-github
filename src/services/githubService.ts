@@ -18,6 +18,7 @@ import {
   EXT_HOME_DIR,
   COPYRIGHT_REPLACE_STRING,
   COPYRIGHT_SEARCH_REGEX,
+  USER_CONFIG_NAME,
 } from "./config";
 import { hexoExec, initializeHexo } from "./hexoService";
 import {
@@ -66,10 +67,11 @@ interface EnableGitHubPagesHttps {
 
 // 获取 CNAME
 export const getCName = (username: string, sitename: string): string => {
-  let config = loadConfig();
+  const sitesPath = path.join(EXT_HOME_DIR, username, USER_CONFIG_NAME);
+  const sites = loadJson(sitesPath);
 
   // 使用 Lodash 的 _.get 方法安全地获取嵌套属性
-  return _.get(config, [username, "sites", sitename, "cname"], "");
+  return _.get(sites, ["sites", sitename, "cname"], "");
 };
 
 // 设置 CNAME
@@ -78,25 +80,22 @@ export const setCName = (
   sitename: string,
   cname: string
 ): void => {
-  let config = loadConfig();
-
-  if (!config) {
-    return;
-  }
+  const sitesPath = path.join(EXT_HOME_DIR, username, USER_CONFIG_NAME);
+  const config = loadJson(sitesPath) ?? {};
 
   // 使用 Lodash 的 _.set 方法直接设置嵌套属性
-  _.set(config, [username, "sites", sitename, "cname"], cname);
+  _.set(config, ["sites", sitename, "cname"], cname);
 
-  fs.writeFileSync(EXT_CONFIG_PATH, JSON.stringify(config, null, 2), "utf8");
+  fs.writeFileSync(sitesPath, JSON.stringify(config, null, 2), "utf8");
 };
 
 // 加载配置
-export const loadConfig = (): Config | undefined => {
-  if (!fs.existsSync(EXT_CONFIG_PATH)) {
+export const loadJson = (path: string): Config | undefined => {
+  if (!fs.existsSync(path)) {
     return;
   }
 
-  const rawData = fs.readFileSync(EXT_CONFIG_PATH, "utf8");
+  const rawData = fs.readFileSync(path, "utf8");
   let config: Config = {};
 
   try {
@@ -112,7 +111,7 @@ export const loadConfig = (): Config | undefined => {
 
 // 加载访问令牌
 export const loadAccessToken = async (): Promise<string | undefined> => {
-  let config = loadConfig() ?? {};
+  const config = loadJson(EXT_CONFIG_PATH) ?? {};
 
   const users = Object.keys(config);
   const userName = users.length ? users[0] : null;
@@ -146,7 +145,7 @@ export const saveAccessToken = (
   userName: string,
   accessToken: string
 ): void => {
-  let config: Config = loadConfig() ?? {
+  let config: Config = loadJson(EXT_CONFIG_PATH) ?? {
     [userName]: { accessToken: undefined },
   };
 
@@ -491,17 +490,10 @@ const initializeLocalRepo = async (git: SimpleGit): Promise<void> => {
   logMessage("Local repository does not exist. Pulling...", true);
   await git.init();
   await setGitUser(git);
-  await checkoutBranch(git);
-  await git.add(".");
-  await git.commit(
-    "Update by https://github.com/jyuhou-wong/vscode-hexo-github"
-  );
   const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${localUsername}/vscode-hexo-github-db.git`;
   await git.addRemote("origin", remoteUrl);
-  await git.pull("origin", "main", [
-    "--allow-unrelated-histories",
-    "--strategy-option=theirs",
-  ]);
+  await git.fetch();
+  await git.checkoutBranch("main", "origin/main");
 };
 
 // 处理不存在的仓库
@@ -545,7 +537,7 @@ const createLocalRepo = async (octokit: any, git: SimpleGit): Promise<void> => {
 
   const remoteUrl = `https://${localAccessToken}:x-oauth-basic@github.com/${localUsername}/vscode-hexo-github-db.git`;
   await git.addRemote("origin", remoteUrl);
-  await checkoutBranch(git);
+  await git.checkoutBranch("main", "origin/main");
   await createUserPageRepoIfNeeded(localUsername);
   await createRemoteRepo(octokit, "vscode-hexo-github-db");
   await git.push("origin", "main");
@@ -562,16 +554,6 @@ const createUserPageRepoIfNeeded = async (loginName: string): Promise<void> => {
       siteDir: userPageDir,
       siteName: userPageRepoName,
     } as TreeItem);
-  }
-};
-
-// 切换到主分支
-const checkoutBranch = async (git: SimpleGit): Promise<void> => {
-  const branches = await git.branchLocal();
-  if (!branches.all.includes("main")) {
-    await git.checkoutLocalBranch("main");
-  } else {
-    await git.checkout("main");
   }
 };
 

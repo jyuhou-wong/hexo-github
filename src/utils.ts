@@ -53,8 +53,6 @@ export const handleError = (
     errorMessage = `${message}: An unknown error occurred`;
   }
 
-  logMessage(errorMessage, false, "error");
-
   logMessage(errorMessage, true, "error");
 };
 
@@ -779,7 +777,7 @@ export const replaceLastInHtmlLinks = (
         // Only write back if there are changes
         if (content !== newContent) {
           writeFileSync(itemPath, newContent, "utf-8");
-          logMessage(`Updated: ${itemPath}`);
+          logMessage(`Updated Copyright: ${itemPath}`);
         }
       }
     }
