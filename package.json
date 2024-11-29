@@ -2,7 +2,7 @@
   "name": "vscode-hexo-github",
   "displayName": "Hexo GitHub for VSCode",
   "description": "A VSCode extension for managing Hexo blogs with seamless GitHub integration and intuitive visual operations.",
-  "version": "3.0.5",
+  "version": "3.0.6",
   "icon": "icon.png",
   "publisher": "jyuhou-wong",
   "repository": {
@@ -276,7 +276,7 @@
         },
         {
           "command": "vscode-hexo-github.localPreview",
-          "when": "view == vscode-hexo-github-blogs && (viewItem == page || viewItem == md)",
+          "when": "view == vscode-hexo-github-blogs && (viewItem == page || viewItem == draft || viewItem == md)",
           "group": "inline"
         },
         {
